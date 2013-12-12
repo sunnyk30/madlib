@@ -1,4 +1,4 @@
-/* ----------------------------------------------------------------------- *//** 
+/* ----------------------------------------------------------------------- *//**
  *
  * @file logistic.sql_in
  *
@@ -15,9 +15,305 @@ m4_include(`SQLCommon.m4')
 /**
 @addtogroup grp_logreg
 
-@about
+<div class="toc"><b>Contents</b><ul>
+<li class="level1"><a href="#train">Training Function</a></li>
+<li class="level1"><a href="#examples">Examples</a></li>
+<li class="level1"><a href="#background">Technical Background</a></li>
+<li class="level1"><a href="#literature">Literature</a></li>
+<li class="level1"><a href="#related">Related Topics</a></li>
+</ul></div>
 
-(Binomial) Logistic regression refers to a stochastic model in which the
+@brief Models the relationship between one or more predictor variables and a
+binary categorical dependent variable by predicting the probability of the
+dependent variable using a logistic function.
+
+Binomial logistic regression models the relationship between a dichotomous
+dependent variable and one or more predictor variables. The dependent variable
+may be a Boolean value or a categorial variable that can be represented with a
+Boolean expression. The probabilities describing the possible outcomes of a
+single trial are modeled, as a function of the predictor variables,
+using a logistic function.
+
+@anchor train
+@par Training Function
+The logistic regression training function has the following format:
+<pre class="syntax">
+logregr_train( source_table,
+               out_table,
+               dependent_varname,
+               independent_varname,
+               grouping_cols,
+               max_iter,
+               optimizer,
+               tolerance,
+               verbose
+             )
+</pre>
+\b Arguments
+<DL class="arglist">
+  <DT>source_table</DT>
+  <DD>TEXT. The name of the table containing the training data.</DD>
+
+  <DT>out_table</DT>
+  <DD>TEXT. Name of the generated table containing the output model.
+
+    The output table produced by the logistic regression training function contains the following columns:
+
+    <table class="output">
+      <tr>
+        <th>&lt;...&gt;</th>
+        <td>Text. Grouping columns, if provided in input. This could be multiple columns
+          depending on the \c grouping_col input.</td>
+      </tr>
+
+      <tr>
+        <th>coef</th>
+        <td>FLOAT8. Vector of the coefficients of the regression.</td>
+      </tr>
+
+      <tr>
+        <th>log_likelihood</th>
+        <td>FLOAT8. The log-likelihood \f$ l(\boldsymbol c) \f$.</td>
+      </tr>
+
+      <tr>
+        <th>std_err</th>
+        <td>FLOAT8[]. Vector of the standard error of the coefficients.</td>
+      </tr>
+
+      <tr>
+        <th>z_stats</th>
+        <td>FLOAT8[]. Vector of the z-statistics of the coefficients.</td>
+      </tr>
+
+      <tr>
+        <th>p_values</th>
+        <td>FLOAT8[]. Vector of the p-values of the coefficients.</td>
+      </tr>
+
+      <tr>
+        <th>odds_ratios</th>
+        <td>FLOAT8[]. The odds ratio, \f$ \exp(c_i) \f$.</td>
+      </tr>
+
+      <tr>
+        <th>condition_no</th>
+        <td>FLOAT8[]. The condition number of the \f$X^{*}X\f$
+          matrix. A high condition number is usually an indication that there may be
+          some numeric instability in the result yielding a less reliable model. A high
+          condition number often results when there is a significant amount of
+          colinearity in the underlying design matrix, in which case other regression
+          techniques may be more appropriate.</td>
+      </tr>
+
+      <tr>
+        <th>num_iterations</th>
+        <td>INTEGER. The number of iterations actually completed. This would be different
+          from the \c nIterations argument if a \c tolerance parameter is provided and the
+          algorithm converges before all iterations are completed.</td>
+      </tr>
+      <tr>
+        <th>num_rows_processed</th>
+        <td>INTEGER. The number of rows actually processed, which is equal to the total
+            number of rows in the source table minus the number of skipped rows.</td>
+      </tr>
+      <tr>
+        <th>num_missing_rows_skipped</th>
+        <td>INTEGER. The number of rows skipped during the training. A row will be skipped
+    if the independent_varname is NULL or contains NULL values.</td>
+      </tr>
+    </table>
+
+    A summary table named <out_table>_summary is also created at the same time, which has the following columns:
+     <table class="output">
+    <tr>
+    <th>source_table</th>
+    <td>The data source table name.</td>
+    </tr>
+
+    <tr>
+    <th>out_table</th>
+    <td>The output table name.</td>
+    </tr>
+
+    <tr>
+    <th>dependent_varname</th>
+    <td>The dependent variable.</td>
+    </tr>
+
+    <tr>
+    <th>independent_varname</th>
+    <td>The independent variables</td>
+    </tr>
+
+    <tr>
+    <th>optimizer_params</th>
+    <td>A string that contains all the optimizer parameters, and has the form of 'optimizer=..., max_iter=..., tolerance=...'</td>
+    </tr>
+
+    <tr>
+    <th>num_all_groups</th>
+    <td>How many groups of data were fit by the logistic model.</td>
+    </tr>
+
+    <tr>
+    <th>num_failed_groups</th>
+    <td>How many groups' fitting processes failed.</td>
+    </tr>
+
+    <tr>
+    <th>num_rows_processed</th>
+    <td>The total number of rows usd in the computation.</td>
+    </tr>
+
+    <tr>
+    <th>num_missing_rows_skipped</th>
+    <td>The total number of rows skipped.</td>
+    </tr>
+   </table>
+  </DD>
+
+  <DT>dependent_varname</DT>
+  <DD>TEXT. Name of the dependent variable column (of type BOOLEAN) in the
+    training data or an expression evaluating to a BOOLEAN.</DD>
+
+  <DT>independent_varname</DT>
+  <DD>TEXT. Expression list to evaluate for the
+    independent variables. An intercept variable is not assumed. It is common to
+    provide an explicit intercept term by including a single constant \c 1 term in
+    the independent variable list.</DD>
+
+  <DT>grouping_cols (optional)</DT>
+  <DD>TEXT, default: NULL. An expression list used to group
+    the input dataset into discrete groups, running one regression per group.
+    Similar to the SQL "GROUP BY" clause. When this value is NULL, no
+    grouping is used and a single result model is generated.</DD>
+
+  <DT>max_iter (optional)</DT>
+  <DD>INTEGER, default: 20. The maximum number of iterations that are allowed.</DD>
+
+  <DT>optimizer (optional)</DT>
+  <DD>TEXT, default: 'irls'. The name of the optimizer to use:
+    <table class="output">
+      <tr>
+        <th>'newton' or 'irls'</th>
+        <td>Iteratively reweighted least squares</td>
+      </tr>
+      <tr>
+        <th>'cg'</th>
+        <td>conjugate gradient</td>
+      </tr>
+      <tr>
+        <th>'igd'</th>
+        <td>incremental gradient descent.</td>
+      </tr>
+    </table>
+  </DD>
+
+  <DT>tolerance (optional)</DT>
+  <DD>FLOAT8, default: 0.0001. The difference between
+    log-likelihood values in successive iterations that should indicate
+    convergence. A zero disables the convergence criterion, so that execution
+    stops after \c n iterations have completed.</DD>
+
+  <DT>verbose (optional)</DT>
+  <DD>BOOLEAN, default: FALSE. Provides verbose output of the results of training.</DD>
+</DL>
+
+<dd>@note For p-values, we just return the computation result directly.
+Other statistical packages, like 'R', produce the same result, but on printing the
+result to screen, another format function is used and any p-value that is
+smaller than the machine epsilon (the smallest positive floating-point number
+'x' such that '1 + x != 1') will be printed on screen as "< xxx" (xxx is the
+value of the machine epsilon). Although the result may look different, they are
+in fact the same.
+</dd>
+
+@anchor examples
+@examp
+-# Create the training data table.
+<pre class="example">
+CREATE TABLE patients( id INTEGER NOT NULL,
+                       second_attack INTEGER,
+                       treatment INTEGER,
+                       trait_anxiety INTEGER);
+COPY patients FROM STDIN WITH DELIMITER '|';
+  1 |             1 |         1 |            70
+  3 |             1 |         1 |            50
+  5 |             1 |         0 |            40
+  7 |             1 |         0 |            75
+  9 |             1 |         0 |            70
+ 11 |             0 |         1 |            65
+ 13 |             0 |         1 |            45
+ 15 |             0 |         1 |            40
+ 17 |             0 |         0 |            55
+ 19 |             0 |         0 |            50
+  2 |             1 |         1 |            80
+  4 |             1 |         0 |            60
+  6 |             1 |         0 |            65
+  8 |             1 |         0 |            80
+ 10 |             1 |         0 |            60
+ 12 |             0 |         1 |            50
+ 14 |             0 |         1 |            35
+ 16 |             0 |         1 |            50
+ 18 |             0 |         0 |            45
+ 20 |             0 |         0 |            60
+\.
+</pre>
+-# Train a regression model.
+<pre class="example">
+SELECT madlib.logregr_train( 'patients',
+                             'patients_logregr',
+                             'second_attack',
+                             'ARRAY[1, treatment, trait_anxiety]',
+                             NULL,
+                             20,
+                             'irls'
+                           );
+</pre>
+-# View the regression results.
+<pre class="example">
+-- Set extended display on for easier reading of output
+\\x on
+SELECT * from patients_logregr;
+</pre>
+Result:
+<pre class="result">
+coef           | {5.59049410898112,2.11077546770772,-0.237276684606453}
+log_likelihood | -467.214718489873
+std_err        | {0.318943457652178,0.101518723785383,0.294509929481773}
+z_stats        | {17.5281667482197,20.7919819024719,-0.805666162169712}
+p_values       | {8.73403463417837e-69,5.11539430631541e-96,0.420435365338518}
+odds_ratios    | {267.867942976278,8.2546400100702,0.788773016471171}
+condition_no   | 179.186118573205
+num_iterations | 9
+</pre>
+
+-# Alternatively, unnest the arrays in the results for easier reading of output:
+<pre class="example">
+\\x off
+SELECT unnest(array['intercept', 'treatment', 'trait_anxiety']) as attribute,
+       unnest(coef) as coefficient,
+       unnest(std_err) as standard_error,
+       unnest(z_stats) as z_stat,
+       unnest(p_values) as pvalue,
+       unnest(odds_ratios) as odds_ratio
+    FROM patients_logregr;
+</pre>
+
+@anchor notes
+@par Notes
+All table names can be optionally schema qualified (current_schemas() would be
+searched if a schema name is not provided) and all table and column names
+should follow case-sensitivity and quoting rules per the database.
+(For instance, 'mytable' and 'MyTable' both resolve to the same entity, i.e. 'mytable'.
+If mixed-case or multi-byte characters are desired for entity names then the
+string should be double-quoted; in this case the input would be '"MyTable"').
+
+@anchor background
+@par Technical Background
+
+(Binomial) logistic regression refers to a stochastic model in which the
 conditional mean of the dependent dichotomous variable (usually denoted
 \f$ Y \in \{ 0,1 \} \f$) is the logistic function of an affine function of the
 vector of independent variables (usually denoted \f$ \boldsymbol x \f$). That
@@ -101,73 +397,11 @@ immediately <em>preceding</em> convergence (i.e., \f$ A \f$ is computed using
 the coefficients of the previous iteration). A large condition number (say, more
 than 1000) indicates the presence of significant multicollinearity.
 
-
-@input
-
-The training data is expected to be of the following form:\n
-<pre>{TABLE|VIEW} <em>sourceName</em> (
-    ...
-    <em>dependentVariable</em> BOOLEAN,
-    <em>independentVariables</em> FLOAT8[],
-    ...
-)</pre>
-
-@usage
-- Get vector of coefficients \f$ \boldsymbol c \f$ and all diagnostic
-  statistics:\n
-  <pre>SELECT * FROM \ref logregr(
-    '<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>'
-    [, <em>numberOfIterations</em> [, '<em>optimizer</em>' [, <em>precision</em> ] ] ]
-);</pre>
-  Output:
-  <pre>coef | log_likelihood | std_err | z_stats | p_values | odds_ratios | condition_no | num_iterations
------+----------------+---------+---------+----------+-------------+--------------+---------------
-                                               ...
-</pre>
-- Get vector of coefficients \f$ \boldsymbol c \f$:\n
-  <pre>SELECT (\ref logregr('<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>')).coef;</pre>
-- Get a subset of the output columns, e.g., only the array of coefficients
-  \f$ \boldsymbol c \f$, the log-likelihood of determination
-  \f$ l(\boldsymbol c) \f$, and the array of p-values \f$ \boldsymbol p \f$:
-  <pre>SELECT coef, log_likelihood, p_values
-FROM \ref logregr('<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>');</pre>
-
-@examp
-
--# Create the sample data set:
-@verbatim 
-sql> SELECT * FROM data;
-                  r1                      | val 
----------------------------------------------+-----
- {1,3.01789340097457,0.454183579888195}   | t
- {1,-2.59380532894284,0.602678326424211}  | f
- {1,-1.30643094424158,0.151587064377964}  | t
- {1,3.60722299199551,0.963550757616758}   | t
- {1,-1.52197745628655,0.0782248834148049} | t
- {1,-4.8746574902907,0.345104880165309}   | f
-...
-@endverbatim
--# Run the logistic regression function:
-@verbatim
-sql> \x on
-Expanded display is off.
-sql> SELECT * FROM logregr('data', 'val', 'r1', 100, 'irls', 0.001);
--[ RECORD 1 ]--+--------------------------------------------------------------
-coef           | {5.59049410898112,2.11077546770772,-0.237276684606453}
-log_likelihood | -467.214718489873
-std_err        | {0.318943457652178,0.101518723785383,0.294509929481773}
-z_stats        | {17.5281667482197,20.7919819024719,-0.805666162169712}
-p_values       | {8.73403463417837e-69,5.11539430631541e-96,0.420435365338518}
-odds_ratios    | {267.867942976278,8.2546400100702,0.788773016471171}
-condition_no   | 179.186118573205
-num_iterations | 9
-
-@endverbatim
-
+@anchor literature
 @literature
 
 A somewhat random selection of nice write-ups, with valuable pointers into
-further literature:
+further literature.
 
 [1] Cosma Shalizi: Statistics 36-350: Data Mining, Lecture Notes, 18 November
     2009, http://www.stat.cmu.edu/~cshalizi/350/lectures/26/lecture-26.pdf
@@ -179,337 +413,409 @@ further literature:
 [3] Paul Komarek, Andrew W. Moore: Making Logistic Regression A Core Data Mining
     Tool With TR-IRLS, IEEE International Conference on Data Mining 2005,
     pp. 685-688, http://komarix.org/ac/papers/tr-irls.short.pdf
-    
+
 [4] D. P. Bertsekas: Incremental gradient, subgradient, and proximal methods for
     convex optimization: a survey, Technical report, Laboratory for Information
     and Decision Systems, 2010,
     http://web.mit.edu/dimitrib/www/Incremental_Survey_LIDS.pdf
-    
-[5] A. Nemirovski, A. Juditsky, G. Lan, and A. Shapiro: Robust stochastic 
-    approximation approach to stochastic programming, SIAM Journal on 
+
+[5] A. Nemirovski, A. Juditsky, G. Lan, and A. Shapiro: Robust stochastic
+    approximation approach to stochastic programming, SIAM Journal on
     Optimization, 19(4), 2009, http://www2.isye.gatech.edu/~nemirovs/SIOPT_RSA_2009.pdf
 
-@sa File logistic.sql_in (documenting the SQL functions)
+
+@anchor related
+@par Related Topics
+
+File logistic.sql_in documenting the training function
+
+logregr_train()
+
+elastic_net_train()
+
+\ref grp_linreg
+
+\ref grp_mlogreg
+
+\ref grp_robust
+
+\ref grp_clustered_errors
+
+\ref grp_validation
+
+\ref grp_marginal
 
 @internal
 @sa Namespace logistic (documenting the driver/outer loop implemented in
     Python), Namespace
     \ref madlib::modules::regress documenting the implementation in C++
 @endinternal
-
 */
 
-DROP TYPE IF EXISTS MADLIB_SCHEMA.logregr_result;
-CREATE TYPE MADLIB_SCHEMA.logregr_result AS (
-    coef DOUBLE PRECISION[],
-    log_likelihood DOUBLE PRECISION,
-    std_err DOUBLE PRECISION[],
-    z_stats DOUBLE PRECISION[],
-    p_values DOUBLE PRECISION[],
-    odds_ratios DOUBLE PRECISION[],
-    condition_no DOUBLE PRECISION,
-    num_iterations INTEGER
+DROP TYPE IF EXISTS MADLIB_SCHEMA.__logregr_result;
+CREATE TYPE MADLIB_SCHEMA.__logregr_result AS (
+    coef            DOUBLE PRECISION[],
+    log_likelihood  DOUBLE PRECISION,
+    std_err         DOUBLE PRECISION[],
+    z_stats         DOUBLE PRECISION[],
+    p_values        DOUBLE PRECISION[],
+    odds_ratios     DOUBLE PRECISION[],
+    condition_no    DOUBLE PRECISION,
+    status          INTEGER,
+    num_processed   BIGINT,
+    num_iterations  INTEGER
 );
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_cg_step_transition(
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_cg_step_transition(
     DOUBLE PRECISION[],
     BOOLEAN,
     DOUBLE PRECISION[],
     DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_cg_step_transition'
 LANGUAGE C IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_irls_step_transition(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_irls_step_transition(
     DOUBLE PRECISION[],
     BOOLEAN,
     DOUBLE PRECISION[],
     DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_irls_step_transition'
 LANGUAGE C IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_igd_step_transition(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_igd_step_transition(
     DOUBLE PRECISION[],
     BOOLEAN,
     DOUBLE PRECISION[],
     DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_igd_step_transition'
 LANGUAGE C IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_cg_step_merge_states(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_cg_step_merge_states(
     state1 DOUBLE PRECISION[],
     state2 DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_cg_step_merge_states'
 LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_irls_step_merge_states(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_irls_step_merge_states(
     state1 DOUBLE PRECISION[],
     state2 DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_irls_step_merge_states'
 LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_igd_step_merge_states(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_igd_step_merge_states(
     state1 DOUBLE PRECISION[],
     state2 DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_igd_step_merge_states'
 LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_cg_step_final(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_cg_step_final(
     state DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_cg_step_final'
 LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_irls_step_final(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_irls_step_final(
     state DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_irls_step_final'
 LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_igd_step_final(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_igd_step_final(
     state DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION[]
-AS 'MODULE_PATHNAME'
+AS 'MODULE_PATHNAME', 'logregr_igd_step_final'
 LANGUAGE C IMMUTABLE STRICT;
+
+------------------------------------------------------------------------
 
 /**
  * @internal
  * @brief Perform one iteration of the conjugate-gradient method for computing
  *        logistic regression
  */
-CREATE AGGREGATE MADLIB_SCHEMA.logregr_cg_step(
+CREATE AGGREGATE MADLIB_SCHEMA.__logregr_cg_step(
     /*+ y */ BOOLEAN,
     /*+ x */ DOUBLE PRECISION[],
     /*+ previous_state */ DOUBLE PRECISION[]) (
-    
+
     STYPE=DOUBLE PRECISION[],
-    SFUNC=MADLIB_SCHEMA.logregr_cg_step_transition,
-    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.logregr_cg_step_merge_states,')
-    FINALFUNC=MADLIB_SCHEMA.logregr_cg_step_final,
+    SFUNC=MADLIB_SCHEMA.__logregr_cg_step_transition,
+    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.__logregr_cg_step_merge_states,')
+    FINALFUNC=MADLIB_SCHEMA.__logregr_cg_step_final,
     INITCOND='{0,0,0,0,0,0}'
 );
+
 
 /**
  * @internal
  * @brief Perform one iteration of the iteratively-reweighted-least-squares
  *        method for computing linear regression
  */
-CREATE AGGREGATE MADLIB_SCHEMA.logregr_irls_step(
+CREATE AGGREGATE MADLIB_SCHEMA.__logregr_irls_step(
     /*+ y */ BOOLEAN,
     /*+ x */ DOUBLE PRECISION[],
     /*+ previous_state */ DOUBLE PRECISION[]) (
-    
+
     STYPE=DOUBLE PRECISION[],
-    SFUNC=MADLIB_SCHEMA.logregr_irls_step_transition,
-    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.logregr_irls_step_merge_states,')
-    FINALFUNC=MADLIB_SCHEMA.logregr_irls_step_final,
-    INITCOND='{0,0,0}'
+    SFUNC=MADLIB_SCHEMA.__logregr_irls_step_transition,
+    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.__logregr_irls_step_merge_states,')
+    FINALFUNC=MADLIB_SCHEMA.__logregr_irls_step_final,
+    INITCOND='{0,0,0,0}'
 );
+
+------------------------------------------------------------------------
 
 /**
  * @internal
  * @brief Perform one iteration of the incremental gradient
  *        method for computing logistic regression
  */
-CREATE AGGREGATE MADLIB_SCHEMA.logregr_igd_step(
+CREATE AGGREGATE MADLIB_SCHEMA.__logregr_igd_step(
     /*+ y */ BOOLEAN,
     /*+ x */ DOUBLE PRECISION[],
     /*+ previous_state */ DOUBLE PRECISION[]) (
-    
+
     STYPE=DOUBLE PRECISION[],
-    SFUNC=MADLIB_SCHEMA.logregr_igd_step_transition,
-    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.logregr_igd_step_merge_states,')
-    INITCOND='{0,0,0,0}'
+    SFUNC=MADLIB_SCHEMA.__logregr_igd_step_transition,
+    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.__logregr_igd_step_merge_states,')
+    FINALFUNC=MADLIB_SCHEMA.__logregr_igd_step_final,
+    INITCOND='{0,0,0,0,0}'
 );
 
+------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_cg_step_distance(
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_cg_step_distance(
     /*+ state1 */ DOUBLE PRECISION[],
     /*+ state2 */ DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION AS
-'MODULE_PATHNAME'
+'MODULE_PATHNAME', 'internal_logregr_cg_step_distance'
 LANGUAGE c IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_cg_result(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_cg_result(
     /*+ state */ DOUBLE PRECISION[])
-RETURNS MADLIB_SCHEMA.logregr_result AS
-'MODULE_PATHNAME'
+RETURNS MADLIB_SCHEMA.__logregr_result AS
+'MODULE_PATHNAME', 'internal_logregr_cg_result'
 LANGUAGE c IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_irls_step_distance(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_irls_step_distance(
     /*+ state1 */ DOUBLE PRECISION[],
     /*+ state2 */ DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION AS
-'MODULE_PATHNAME'
+'MODULE_PATHNAME', 'internal_logregr_irls_step_distance'
 LANGUAGE c IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_irls_result(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_irls_result(
     /*+ state */ DOUBLE PRECISION[])
-RETURNS MADLIB_SCHEMA.logregr_result AS
-'MODULE_PATHNAME'
+RETURNS MADLIB_SCHEMA.__logregr_result AS
+'MODULE_PATHNAME', 'internal_logregr_irls_result'
 LANGUAGE c IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_igd_step_distance(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_igd_step_distance(
     /*+ state1 */ DOUBLE PRECISION[],
     /*+ state2 */ DOUBLE PRECISION[])
 RETURNS DOUBLE PRECISION AS
-'MODULE_PATHNAME'
+'MODULE_PATHNAME', 'internal_logregr_igd_step_distance'
 LANGUAGE c IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_logregr_igd_result(
+------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.__logregr_igd_result(
     /*+ state */ DOUBLE PRECISION[])
-RETURNS MADLIB_SCHEMA.logregr_result AS
-'MODULE_PATHNAME'
+RETURNS MADLIB_SCHEMA.__logregr_result AS
+'MODULE_PATHNAME', 'internal_logregr_igd_result'
 LANGUAGE c IMMUTABLE STRICT;
 
-
--- We only need to document the last one (unfortunately, in Greenplum we have to
--- use function overloading instead of default arguments).
-CREATE FUNCTION MADLIB_SCHEMA.compute_logregr(
-    "source" VARCHAR,
-    "depColumn" VARCHAR,
-    "indepColumn" VARCHAR,
-    "maxNumIterations" INTEGER,
-    "optimizer" VARCHAR,
-    "precision" DOUBLE PRECISION)
-RETURNS INTEGER
-AS $$PythonFunction(regress, logistic, compute_logregr)$$
-LANGUAGE plpythonu VOLATILE;
+------------------------------------------------------------------------
 
 /**
  * @brief Compute logistic-regression coefficients and diagnostic statistics
  *
  * To include an intercept in the model, set one coordinate in the
  * <tt>independentVariables</tt> array to 1.
- * 
- * @param source Name of the source relation containing the training data
- * @param depColumn Name of the dependent column (of type BOOLEAN)
- * @param indepColumn Name of the independent column (of type DOUBLE
+ *
+ * @param source_table Name of the source relation containing the training data
+ * @param out_table Name of the output relation to store the model results
+ *
+ *                   Columns of the output relation are as follows:
+ *                    - <tt>coef FLOAT8[]</tt> - Array of coefficients, \f$ \boldsymbol c \f$
+ *                    - <tt>log_likelihood FLOAT8</tt> - Log-likelihood \f$ l(\boldsymbol c) \f$
+ *                    - <tt>std_err FLOAT8[]</tt> - Array of standard errors,
+ *                      \f$ \mathit{se}(c_1), \dots, \mathit{se}(c_k) \f$
+ *                    - <tt>z_stats FLOAT8[]</tt> - Array of Wald z-statistics, \f$ \boldsymbol z \f$
+ *                    - <tt>p_values FLOAT8[]</tt> - Array of Wald p-values, \f$ \boldsymbol p \f$
+ *                    - <tt>odds_ratios FLOAT8[]</tt>: Array of odds ratios,
+ *                      \f$ \mathit{odds}(c_1), \dots, \mathit{odds}(c_k) \f$
+ *                    - <tt>condition_no FLOAT8</tt> - The condition number of
+ *                          matrix \f$ X^T A X \f$ during the iteration
+ *                          immediately <em>preceding</em> convergence
+ *                          (i.e., \f$ A \f$ is computed using the coefficients
+ *                          of the previous iteration)
+ * @param dependent_varname Name of the dependent column (of type BOOLEAN)
+ * @param independent_varname Name of the independent column (of type DOUBLE
  *        PRECISION[])
- * @param maxNumIterations The maximum number of iterations
+ * @param grouping_col Comma delimited list of column names to group-by
+ * @param max_iter The maximum number of iterations
  * @param optimizer The optimizer to use (either
  *        <tt>'irls'</tt>/<tt>'newton'</tt> for iteratively reweighted least
  *        squares or <tt>'cg'</tt> for conjugent gradient)
- * @param precision The difference between log-likelihood values in successive
- *        iterations that should indicate convergence. Note that a non-positive
- *        value here disables the convergence criterion, and execution will only
- *        stop after \c maxNumIterations iterations.
+ * @param tolerance The difference between log-likelihood values in successive
+ *         iterations that should indicate convergence. This value should be
+ *         non-negative and a zero value here disables the convergence criterion,
+ *         and execution will only stop after \c maxNumIterations iterations.
+ * @param verbose If true, any error or warning message will be printed to the
+ *         console (irrespective of the 'client_min_messages' set by server).
+ *         If false, no error/warning message is printed to console.
  *
- * @return A composite value:
- *  - <tt>coef FLOAT8[]</tt> - Array of coefficients, \f$ \boldsymbol c \f$
- *  - <tt>log_likelihood FLOAT8</tt> - Log-likelihood \f$ l(\boldsymbol c) \f$
- *  - <tt>std_err FLOAT8[]</tt> - Array of standard errors,
- *    \f$ \mathit{se}(c_1), \dots, \mathit{se}(c_k) \f$
- *  - <tt>z_stats FLOAT8[]</tt> - Array of Wald z-statistics, \f$ \boldsymbol z \f$
- *  - <tt>p_values FLOAT8[]</tt> - Array of Wald p-values, \f$ \boldsymbol p \f$
- *  - <tt>odds_ratios FLOAT8[]</tt>: Array of odds ratios,
- *    \f$ \mathit{odds}(c_1), \dots, \mathit{odds}(c_k) \f$
- *  - <tt>condition_no FLOAT8</tt> - The condition number of matrix
- *    \f$ X^T A X \f$ during the iteration immediately <em>preceding</em>
- *    convergence (i.e., \f$ A \f$ is computed using the coefficients of the
- *    previous iteration)
- *  - <tt>num_iterations INTEGER</tt> - The number of iterations before the
- *    algorithm terminated
  *
  * @usage
  *  - Get vector of coefficients \f$ \boldsymbol c \f$ and all diagnostic
  *    statistics:\n
- *    <pre>SELECT * FROM logregr('<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>');</pre>
+ *    <pre>SELECT logregr_train('<em>sourceName</em>', '<em>outName</em>'
+ *           '<em>dependentVariable</em>', '<em>independentVariables</em>');
+ *          SELECT * from outName;
+ *    </pre>
  *  - Get vector of coefficients \f$ \boldsymbol c \f$:\n
- *    <pre>SELECT (logregr('<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>')).coef;</pre>
+ *    <pre>SELECT coef from outName;</pre>
  *  - Get a subset of the output columns, e.g., only the array of coefficients
  *    \f$ \boldsymbol c \f$, the log-likelihood of determination
  *    \f$ l(\boldsymbol c) \f$, and the array of p-values \f$ \boldsymbol p \f$:
- *    <pre>SELECT coef, log_likelihood, p_values
- *FROM logregr('<em>sourceName</em>', '<em>dependentVariable</em>', '<em>independentVariables</em>');</pre>
+ *    <pre>SELECT coef, log_likelihood, p_values FROM outName;</pre>
  *
  * @note This function starts an iterative algorithm. It is not an aggregate
- *       function. Source and column names have to be passed as strings (due to
- *       limitations of the SQL syntax).
+ *       function. Source, output, and column names have to be passed as strings
+ *       (due to limitations of the SQL syntax).
  *
  * @internal
  * @sa This function is a wrapper for logistic::compute_logregr(), which
  *     sets the default values.
  */
-CREATE FUNCTION MADLIB_SCHEMA.logregr(
-    "source" VARCHAR,
-    "depColumn" VARCHAR,
-    "indepColumn" VARCHAR,
-    "maxNumIterations" INTEGER /*+ DEFAULT 20 */,
-    "optimizer" VARCHAR /*+ DEFAULT 'irls' */,
-    "precision" DOUBLE PRECISION /*+ DEFAULT 0.0001 */)
-RETURNS MADLIB_SCHEMA.logregr_result AS $$
-DECLARE
-    theIteration INTEGER;
-    fnName VARCHAR;
-    theResult MADLIB_SCHEMA.logregr_result;
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR,
+    grouping_cols       VARCHAR,
+    max_iter            INTEGER,
+    optimizer           VARCHAR,
+    tolerance           DOUBLE PRECISION,
+    verbose             BOOLEAN
+) RETURNS VOID AS $$
+PythonFunction(regress, logistic, logregr_train)
+$$ LANGUAGE plpythonu;
+
+------------------------------------------------------------------------
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR)
+RETURNS VOID AS $$
+    SELECT MADLIB_SCHEMA.logregr_train($1, $2, $3, $4, NULL::VARCHAR, 20, 'irls', 0.0001, False);
+$$ LANGUAGE sql VOLATILE;
+
+------------------------------------------------------------------------
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR,
+    grouping_cols       VARCHAR)
+RETURNS VOID AS $$
+    SELECT MADLIB_SCHEMA.logregr_train($1, $2, $3, $4, $5, 20, 'irls', 0.0001, False);
+$$LANGUAGE sql VOLATILE;
+
+------------------------------------------------------------------------
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR,
+    grouping_cols       VARCHAR,
+    max_iter            INTEGER)
+RETURNS VOID AS $$
+    SELECT MADLIB_SCHEMA.logregr_train($1, $2, $3, $4, $5, $6, 'irls', 0.0001, False);
+$$LANGUAGE sql VOLATILE;
+
+------------------------------------------------------------------------
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR,
+    grouping_cols       VARCHAR,
+    max_iter            INTEGER,
+    optimizer           VARCHAR)
+RETURNS VOID AS $$
+    SELECT MADLIB_SCHEMA.logregr_train($1, $2, $3, $4, $5, $6, $7, 0.0001, False);
+$$ LANGUAGE sql VOLATILE;
+
+------------------------------------------------------------------------
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train (
+    source_table        VARCHAR,
+    out_table           VARCHAR,
+    dependent_varname   VARCHAR,
+    independent_varname VARCHAR,
+    grouping_cols       VARCHAR,
+    max_iter            INTEGER,
+    optimizer           VARCHAR,
+    tolerance           DOUBLE PRECISION)
+RETURNS VOID AS $$
+    SELECT MADLIB_SCHEMA.logregr_train($1, $2, $3, $4, $5, $6, $7, $8, False);
+$$ LANGUAGE sql VOLATILE;
+
+-----------------------------------------------------------------------
+
+-- Help messages
+
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train ()
+RETURNS TEXT AS $$
 BEGIN
-    theIteration := (
-        SELECT MADLIB_SCHEMA.compute_logregr($1, $2, $3, $4, $5, $6)
-    );
-    -- Because of Greenplum bug MPP-10050, we have to use dynamic SQL (using
-    -- EXECUTE) in the following
-    -- Because of Greenplum bug MPP-6731, we have to hide the tuple-returning
-    -- function in a subquery
-    IF optimizer = 'irls' OR optimizer = 'newton' THEN
-        fnName := 'internal_logregr_irls_result';
-    ELSIF optimizer = 'cg' THEN
-        fnName := 'internal_logregr_cg_result';
-    ELSEIF optimizer = 'igd' THEN
-        fnName := 'internal_logregr_igd_result';
-    ELSE
-        RAISE EXCEPTION 'Unknown optimizer (''%'')', optimizer;
-    END IF;
-    EXECUTE
-        $sql$
-        SELECT (result).*
-        FROM (
-            SELECT
-                MADLIB_SCHEMA.$sql$ || fnName || $sql$(_madlib_state) AS result
-                FROM _madlib_iterative_alg
-                WHERE _madlib_iteration = $sql$ || theIteration || $sql$
-            ) subq
-        $sql$
-        INTO theResult;
-    -- The number of iterations are not updated in the C++ code. We do it here.
-    IF NOT (theResult IS NULL) THEN
-        theResult.num_iterations = theIteration;
-    END IF;
-    RETURN theResult;
+    RETURN MADLIB_SCHEMA.logregr_train(NULL);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE FUNCTION MADLIB_SCHEMA.logregr(
-    "source" VARCHAR,
-    "depColumn" VARCHAR,
-    "indepColumn" VARCHAR)
-RETURNS MADLIB_SCHEMA.logregr_result AS
-$$SELECT MADLIB_SCHEMA.logregr($1, $2, $3, 20, 'irls', 0.0001);$$
-LANGUAGE sql VOLATILE;
+CREATE FUNCTION MADLIB_SCHEMA.logregr_train(
+    message    TEXT
+) RETURNS TEXT AS $$
+    PythonFunction(regress, logistic, logregr_help_msg)
+$$ LANGUAGE plpythonu VOLATILE;
 
-CREATE FUNCTION MADLIB_SCHEMA.logregr(
-    "source" VARCHAR,
-    "depColumn" VARCHAR,
-    "indepColumn" VARCHAR,
-    "maxNumIterations" INTEGER)
-RETURNS MADLIB_SCHEMA.logregr_result AS
-$$SELECT MADLIB_SCHEMA.logregr($1, $2, $3, $4, 'irls', 0.0001);$$
-LANGUAGE sql VOLATILE;
-
-CREATE FUNCTION MADLIB_SCHEMA.logregr(
-    "source" VARCHAR,
-    "depColumn" VARCHAR,
-    "indepColumn" VARCHAR,
-    "maxNumIterations" INTEGER,
-    "optimizer" VARCHAR)
-RETURNS MADLIB_SCHEMA.logregr_result AS
-$$SELECT MADLIB_SCHEMA.logregr($1, $2, $3, $4, $5, 0.0001);$$
-LANGUAGE sql VOLATILE;
+------------------------------------------------------------------------
 
 /**
  * @brief Evaluate the usual logistic function in an under-/overflow-safe way
@@ -520,7 +826,7 @@ LANGUAGE sql VOLATILE;
  * Evaluating this expression directly can lead to under- or overflows.
  * This function performs the evaluation in a safe manner, making use of the
  * following observations:
- * 
+ *
  * In order for the outcome of \f$ \exp(x) \f$ to be within the range of the
  * minimum positive double-precision number (i.e., \f$ 2^{-1074} \f$) and the
  * maximum positive double-precision number (i.e.,
@@ -542,3 +848,4 @@ AS $$
                ELSE 1 / (1 + exp(-$1))
           END;
 $$;
+

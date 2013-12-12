@@ -2,7 +2,7 @@
 # Packaging for Greenplum's gppkg
 # ------------------------------------------------------------------------------
 
-set(MADLIB_GPPKG_VERSION "1.2")
+set(MADLIB_GPPKG_VERSION "1.8")
 set(MADLIB_GPPKG_RELEASE_NUMBER 1)
 set(MADLIB_GPPKG_RPM_SOURCE_DIR
     "${CMAKE_BINARY_DIR}/_CPack_Packages/Linux/RPM/${CPACK_PACKAGE_FILE_NAME}"
@@ -39,3 +39,5 @@ file(GLOB GPPKG_VERSIONS "${CMAKE_CURRENT_BINARY_DIR}/Version_*.cmake")
 foreach(GPPKG_VERSION ${GPPKG_VERSIONS})
     include("${GPPKG_VERSION}")
 endforeach(GPPKG_VERSION)
+
+set(CPACK_RPM_SPEC_MORE_DEFINE "%undefine __os_install_post" PARENT_SCOPE)

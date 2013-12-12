@@ -47,8 +47,9 @@ endif (NOT BOOST_TAR_SOURCE)
 # specify an alternative path to the Eigen tarball:
 # -DEIGEN_TAR_SOURCE=/path/to/eigen-x.x.x.tar.gz
 
-set(EIGEN_VERSION "3.0.3")
-set(EIGEN_TAR_MD5 695f24be85c4fe957ce6a4dd11161f48)
+set(EIGEN_VERSION "3.1.2")
+set(EIGEN_TAR_MD5 bb639388192cb80f1ee797f5dbdbe74f)
+set(EIGEN_MPL2_ONLY TRUE)
 
 set(EIGEN_TAR "eigen-${EIGEN_VERSION}.tar.gz")
 set(EIGEN_URL "${BITBUCKET_BASE_URL}/eigen/eigen/get/${EIGEN_VERSION}.tar.gz")
@@ -234,8 +235,15 @@ macro(add_madlib_connector_library IN_TARGET_NAME IN_LIB_DIR IN_LIB_LOADER)
 
     if(APPLE)
         set_target_properties(${IN_TARGET_NAME} PROPERTIES
-            LINK_FLAGS "-bundle_loader \"${IN_LIB_LOADER}\"")
+            LINK_FLAGS
+            "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../../../unexported_symbols_list.txt -bundle_loader \"${IN_LIB_LOADER}\"")
     endif(APPLE)
+
+    if((NOT APPLE)) 
+        set_target_properties(${IN_TARGET_NAME} PROPERTIES
+            LINK_FLAGS
+            "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../../../library.ver")
+    endif((NOT APPLE))
 endmacro(add_madlib_connector_library)
 
 

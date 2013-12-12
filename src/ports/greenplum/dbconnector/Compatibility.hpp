@@ -27,6 +27,15 @@ namespace {
 	SearchSysCache(cacheId, key1, 0, 0, 0)
 #endif
 
+/*
+ * In commit 2d4db3675fa7a2f4831b755bc98242421901042f,
+ * by Tom Lane <tgl@sss.pgh.pa.us> Wed, 6 Jun 2007 23:00:50 +0000,
+ * is_array_type was changed to type_is_array
+ */
+#if defined(is_array_type) && !defined(type_is_array)
+    #define type_is_array(x) is_array_type(x)
+#endif
+
 /**
  * The following has existed in PostgresSQL since commit ID
  * d5768dce10576c2fb1254c03fb29475d4fac6bb4, by
@@ -67,7 +76,39 @@ AggCheckCallContext(FunctionCallInfo fcinfo, MemoryContext *aggcontext) {
 	return 0;
 }
 
-} // namnespace
+} // namespace
+
+inline ArrayType* madlib_construct_array
+(
+    Datum*  elems,
+    int     nelems,
+    Oid     elmtype,
+    int     elmlen,
+    bool    elmbyval,
+    char    elmalign
+){
+    return 
+        construct_array(
+            elems, nelems, elmtype, elmlen, elmbyval, elmalign);
+}
+
+inline ArrayType* madlib_construct_md_array
+(
+    Datum*  elems,
+    bool*   nulls,
+    int     ndims,
+    int*    dims,
+    int*    lbs,
+    Oid     elmtype,
+    int     elmlen,
+    bool    elmbyval,
+    char    elmalign
+){
+    return
+        construct_md_array(
+            elems, nulls, ndims, dims, lbs, elmtype, elmlen, elmbyval,
+            elmalign);
+}
 
 } // namespace postgres
 

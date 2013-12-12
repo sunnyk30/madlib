@@ -293,7 +293,7 @@ void SQLScanner::preScannerAction(SQLParser::semantic_type * /* yylval */,
     
     // Start at oldLength: We don't want to count preserved text more than once
 	for (int i = oldLength; i < yyleng; i++) {
-		if (yytext[i] == '\r' && i < yyleng - 1 && yytext[i + 1] == '\n') {
+		if (yytext[i] == '\r' && i + 1 < yyleng && yytext[i + 1] == '\n') {
 			i++; yylloc->lines(1);
 		} else if (yytext[i] == '\r' || yytext[i] == '\n') {
 			yylloc->lines(1);

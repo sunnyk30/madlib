@@ -2,6 +2,8 @@
 # List of methods/modules and their dependencies:
 ###
 modules:
+    - name: linear_systems
+      depends: ['utilities']
     - name: array_ops
     - name: assoc_rules
       depends: ['svec']
@@ -12,16 +14,20 @@ modules:
       depends: ['array_ops']
     - name: convex
       depends: ['utilities']
+    - name: crf
+      depends: ['viterbi']
     - name: data_profile
       depends: ['sketch']
     - name: cart
+    - name: elastic_net
     - name: kmeans
       depends: ['array_ops','svec','sample']
     - name: kernel_machines
       depends: ['svec']
     - name: linalg
-    - name: plda
+    - name: lda
     - name: prob
+    - name: pca
     - name: quantile
     - name: regress
       depends: ['utilities']
@@ -29,10 +35,11 @@ modules:
       depends: ['utilities']
     - name: sketch
     - name: stats
+    - name: summary
     - name: svd_mf
     - name: svec
     - name: utilities
       depends: ['linalg']
     - name: viterbi
-    - name: crf
-      depends: ['viterbi']
+    - name: validation
+    - name: tsa 

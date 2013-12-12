@@ -8,6 +8,339 @@ A complete list of changes for each release can be obtained by viewing the git
 commit history located at https://github.com/madlib/madlib/commits/master.
 
 Current list of bugs and issues can be found at http://jira.madlib.net.
+--------------------------------------------------------------------------------
+MADlib v1.4
+
+Release Date: 2013-Nov-25
+
+New Features:
+* Improved interface for Multinomial logistic regression:
+    - Added a new interface that accepts an 'output_table' parameter and
+    stores the model details in the output table instead of returning as a struct
+    data type. The updated function also builds a summary table that includes
+    all parameters and meta-parameters used during model training.
+    - The output table has been reformatted to present the model coefficients
+    and related metrics for each category in a separate row. This replaces the
+    old output format of model stats for all categories combined in a
+    single array.
+* Variance Estimators
+    - Added Robust Variance estimator for Cox PH models (Lin and Wei, 1989).
+    It is useful in calculating variances in a dataset with potentially
+    noisy outliers. Namely, the standard errors are asymptotically normal even
+    if the model is wrong due to outliers.
+    - Added Clustered Variance estimator for Cox PH models. It is used
+    when data contains extra clustering information besides covariates and
+    are asymptotically normal estimates.
+* NULL Handling:
+    - Modified behavior of regression modules to 'omit' rows containing NULL
+    values for any of the dependent and independent variables. The number of
+    rows skipped is provided as part of the output table.
+    This release includes NULL handling for following modules:
+        - Linear, Logistic, and Multinomial logistic regression, as well as
+        Cox Proportional Hazards
+        - Huber-White sandwich estimators for linear, logistic, and multinomial
+        logistic regression as well as Cox Proportional Hazards
+        - Clustered variance estimators for linear, logistic, and multinomial
+        logistic regression as well as Cox Proportional Hazards
+        - Marginal effects for logistic and multinomial logistic regression
+
+Deprecated functions:
+    - Multinomial logistic regression function has been renamed to
+    'mlogregr_train'. Old function ('mlogregr') has been deprecated,
+    and will be removed in the next major version update.
+
+    - For all multinomial regression estimator functions (list given below),
+    changes in the argument list were made to collate all optimizer specific
+    arguments in a single string. An example of the new optimizer parameter is
+    'max_iter=20, optimizer=irls, precision=0.0001'.
+    This is in contrast to the original argument list that contained 3 arguments:
+    'max_iter', 'optimizer', and 'precision'. This change allows adding new
+    optimizer-specific parameters without changing the argument list.
+    Affected functions:
+        - robust_variance_mlogregr
+        - clustered_variance_mlogregr
+        - margins_mlogregr
+
+Bug Fixes:
+    - Fixed an overflow problem in LDA by using INT64 instead of INT32.
+    - Fixed integer to boolean cast bug in clustered variance for logistic
+    regression. After this fix, integer columns are accepted for binary
+    dependent variable using the 'integer to bool' cast rules.
+    - Fixed two bugs in SVD:
+        - The 'example' option for online help has been fixed
+        - Column names for sparse input tables in the 'svd_sparse' and
+        'svd_sparse_native' functions are no longer restricted to 'row_id',
+        'col_id' and 'value'.
+
+--------------------------------------------------------------------------------
+MADlib v1.3
+
+Release Date: 2013-October-03
+
+New Features:
+* Cox Proportional Hazards:
+    - Added stratification support for Cox PH models. Stratification is used as
+    shorthand for building a Cox model that allows for more than one stratum,
+    and hence, allows for more than one baseline hazard function.
+    Stratification provides two pieces of key, flexible functionality for the
+    end user of Cox models:
+        -- Allows a categorical variable Z to be appropriately accounted for in
+        the model without estimating its predictive impact on the response
+        variable.
+        -- Categorical variable Z is predictive/associated with the response
+        variable, but Z may not satisfy the proportional hazards assumption
+    - Added a new function (cox_zph) that tests the proportional hazards
+    assumption of a Cox model. This allows the user to build Cox models and then
+    verify the relevance of the model.
+* NULL Handling:
+    - Modified behavior of linear and logistic regression to 'omit' rows
+    containing NULL values for any of the dependent and independent variables.
+    The number of rows skipped is provided as part of the output table.
+
+Deprecated functions:
+    - Cox Proportional Hazard function has been renamed to 'coxph_train'.
+    Old function names ('cox_prop_hazards' and 'cox_prop_hazards_regr')
+    have been deprecated, and will be removed in the next major version update.
+    - The aggregate form of linear regression ('linregr') has been deprecated.
+    The stored-procedure form ('linregr_train') should be used instead.
+
+Bug Fixes:
+    - Fixed a memory leak in the Apriori algorithm.
+
+
+--------------------------------------------------------------------------------
+MADlib v1.2
+
+Release Date: 2013-September-06
+
+New Features:
+* ARIMA Timeseries modeling
+    - Added auto-regressive integrated moving average (ARIMA) modeling for
+    non-seasonal, univariate timeseries data.
+    - Module includes a training function to compute an ARIMA model and a
+    forecasting function to predict future values in the timeseries
+    - Training function employs the Levenberg-Marquardt algorithm (LMA) to
+    compute a numerical solution for the parameters of the model. The
+    observations and innovations for time before the first timestamp
+    are assumed to be zero leading to minimization of the conditional sum of
+    squares. This produces estimates referred to as conditional maximum likelihood
+    estimates (also referred as 'CSS' in some statistical packages).
+* Documentation updates:
+    - Introduced a new format for documentation improving usability.
+    - Upgraded to Doxygen v1.84.
+    - Updated documentation improving consistency for multiple modules including
+    Regression methods, SVD, PCA, Summary function, and Linear systems.
+Bug fixes:
+    - Checking out-of-bounds access of a 'svec' even if the size of svec is zero.
+    - Fixed a minor bug allowing use of GCC 4.7 and higher to build from source.
+--------------------------------------------------------------------------------
+MADlib v1.1
+
+Release Date: 2013-August-09
+
+New Features:
+* Singular Value Decomposition:
+    - Added Singular Value Decomposition using the Lanczos bidiagonalization
+    iterative method to decompose the original matrix into PBQ^t, where B is
+    a bidiagonalized matrix. We assume that the original matrix is too big to
+    load into memory but B can be loaded into the memory. B is then further
+    decomposed into XSY^T using Eigen's JacobiSVD function. This restricts the
+    number of features in the data matrix to about 5000.
+    - This implementation provides SVD (for dense matrix), SVD_BLOCK (also for
+    dense matrix but faster), SVD_SPARSE (convert a sparse matrix into a
+    dense one, slower) and SVD_SPARSE_NATIVE (directly operate on the sparse
+    matrix, much faster for really sparse matrices).
+
+* Principal Component Analysis:
+    - Added a PCA training function that generates the top-K principal
+    components for an input matrix. The original data is mean-centered by the
+    function with the mean matrix returned by the function as a separate table.
+    - The module also includes the projection function that projects a test data
+    set to the principal components returned by the train function.
+
+* Linear Systems:
+    - Added a module to solve linear system of equations (Ax = b).
+    - The module utilizes various direct methods from the Eigen library for
+    dense systems. Given below is a summary of the methods (more details at
+    http://eigen.tuxfamily.org/dox-devel/group__TutorialLinearAlgebra.html):
+        - Householder QR
+        - Partial Pivoting LU
+        - Full Pivoting LU
+        - Column Pivoting Householder QR
+        - Full Pivoting Householder QR
+        - Standard Cholesky decomposition (LLT)
+        - Robust Cholesky decomposition (LDLT)
+    - The module also includes direct and iterative methods for sparse linear
+    systems:
+        Direct:
+            - Standard Cholesky decomposition (LLT)
+            - Robust Cholesky decomposition (LDLT)
+        Iterative:
+            - In-memory Conjugate gradient
+            - In-memory Conjugate gradient with diagonal preconditioners
+            - In-memory Bi-conjugate gradient
+            - In-memory Bi-conjugate gradient with incomplete LU preconditioners
+
+Bug fixes and other changes:
+* Robust input validation:
+    - Validation of input parameters to various functions has been improved to
+    ensure that it does not fail if double quotes are included as part of the
+    table name.
+* Random Forest
+    - The ID field in rf_train has been expanded from INT to BIGINT (MADLIB-764)
+* Various documentation updates:
+    - Documentation updated for various modules including elastic net, linear
+    and logistic regression.
+--------------------------------------------------------------------------------
+MADlib v1.0
+
+Release Date: 2013-July-03
+
+New Features:
+* Cox Proportional Hazards:
+    - Added Right Censoring support for Cox Prop Hazards
+* Robust Variance Tests - Huber White:
+    - Added a method of calculating robust variance statistic by utilizing the
+    Huber-White sandwich estimator for linear regression, logistic regression,
+    and multinomial logistic regression
+    - Robust variance for linear and logistic regression also includes
+    grouping support
+* Clustered Sandwich Estimators:
+    - Added clustered robust variance statistic by utilizing a clustered sandwich
+    estimator for linear regression, logistic regression, and multinomial
+    logistic regression
+    - Grouping is currently not implemented for clustered and parameter is only
+    a placeholder at present
+* Marginal Effects Estimator:
+    - Added a method for computing the marginal effects for logistic regression
+    and multinomial logistic regression
+    - Grouping is currently not implemented for marginal effects and the
+    parameter is only a placeholder at present
+* Multinomial logistic regression:
+    - Added a parameter in multinomial logistic regression, to enable picking
+    the reference category. Input for number of categories has been removed
+    due to redundancy
+* Linear regression:
+    - Updated grouping columns to input as a comma delimited string rather
+    than as an array
+    - Resolved an issue with highly collinear data to produce results consistent
+    with other statistical packages. Threshold on condition number to use an
+    approximation for computing the pseudo-inverse was increased.
+* Logistic regression:
+    - Changed behavior to error-out if the ouput table already exists
+
+Bug fixes:
+* Summary:
+    - Summary function (when used with quartiles) used high memory when number
+    of column is large. This has been fixed by computing quartiles in an
+    iterative manner for a fixed number of columns (Pivotal-170)
+    - Fixed a problem with incorrect number of rows returned for Summary when
+    all values in a column are NULL (Pivotal-171)
+--------------------------------------------------------------------------------
+MADlib v0.7
+
+Release Date: 2013-May-01
+
+New Features:
+* Correlation function:
+    - Function to compute Pearson's cross-correlation for numeric columns in a
+        relational table
+* Upgrade capability:
+    - All new versions since v0.7 are installed in a version-specific folder
+        (/usr/local/madlib/Versions/)
+    - Upgrade from v0.5/v0.6 to v0.7 on the database is now supported without
+        uninstalling previous MADlib database installation.
+    - Dependencies on updated functions, types, and other operators are caught
+        and upgrade is aborted with an appropriate message
+
+Bug fixes:
+* Linear Regression:
+    - Improved matrix inversion method to compute coefficients comparable to R
+        for regression problems with high multicollinearity (MADLIB-790)
+* Logistic Regression:
+    - Fixed a problem in logistic regression with grouping on 'text' datatype
+        columns  (MADLIB-791)
+
+Known issues:
+* Upgrade:
+    - Views dependent on MADlib functions being updated will be dropped during
+        the upgrade and restored after finishing upgrade. If upgrade fails for
+        any reason, these views and the original MADlib schema will *not* be
+        restored. Before initiating upgrade, we recommend taking a backup of
+        the MADlib schema and move all views dependent on MADlib to separate
+        schema and perform a backup with:
+                pg_dump -n 'schema_name'
+
+    - Upgrade is currently not supported for the PostgreSQL platform and will
+        abort with an error
+
+    - Upgrade currently does not detect functions defined by the user that
+        depend upon MADlib functions. Semantic/API changes to these MADlib
+        functions could lead to undefined results in such user-defined functions
+
+    - Some important changes for the upgrade from v0.5 to v0.7 are given below
+        (Upgrade will raise an error and abort if there exist user-defined views
+        that depend on these changes. User-defined functions are not validated
+        with this check. An aborted upgrade does not affect the installed version
+        of MADlib.)
+            -- Logistic regression renamed from 'logregr' to 'logregr_train'
+            -- All internal and external aggregates in logistic regression
+                have been updated
+            -- PLDA module replaced with a refactored LDA module. Due to the
+                renaming all functions using PLDA need to be updated
+            -- Updated MADlib types:
+                    logregr_result, plda_topics_t, plda_word_distrn,
+                    plda_word_weight
+--------------------------------------------------------------------------------
+MADlib v0.6
+
+Release Date: 2013-Apr-01
+
+New Features / Improvements:
+* Generic cross-validation:
+    - Support for k-fold cross-validation of any supervised learning
+      algorithm
+* Heteroskedasticity of linear regression
+    - Support for calculating heteroskedasticity via Breusch-Pagan test
+* Grouping support for linear regression
+    - Support for linear regression on each group of data grouped by
+      one or multiple columns
+* Grouping support for logistic regression
+    - Refactor of logistic regression code
+    - Support for logistic regression on each group of data grouped by
+      one or multiple columns
+    - Grouping support is added to the convex optimization framework
+* LDA:
+    - Improved performance and scalability (MADLIB-480)
+* Elastic net regularization for both linear and logistic regressions
+    - Support FISTA and IGD optimizers
+* Summary function
+    - Support for an overview of data table
+* Eigen package upgrade
+    - Now Eigen 3.1.2 is used by MADlib v0.6
+* Unit testing framework:
+    - A new unit testing framework is added for C++ abstraction layer
+
+Bug Fixes:
+* C++ abstraction layer:
+    - Improved handling of NULL values in the input array (MADLIB-773)
+* Naive Bayes:
+    - Improved the handling of NULL values. (MADLIB-749)
+
+Known Issues:
+
+* K-means:
+    - K-means crashes on some datasets, when the dimensionality of the points
+    is not uniform on the data set. (MADLIB-789)
+
+* Distribution Functions:
+    - Certain quantile functions will abort their session on invalid input
+    (MADLIB-786)
+
+* Multinomial Logistic Regression:
+    - Signs of coefficient outputs are inconsistent with other tools like R and
+    Stata (MADLIB-785)
+
 
 --------------------------------------------------------------------------------
 MADlib v0.5

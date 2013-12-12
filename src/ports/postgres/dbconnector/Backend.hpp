@@ -1,11 +1,11 @@
 /* ----------------------------------------------------------------------- *//**
  *
- * @file BackendAbstraction.hpp
+ * @file Backend.hpp
  *
  *//* ----------------------------------------------------------------------- */
 
-#ifndef MADLIB_POSTGRES_BACKEND_ABSTRACTION_HPP
-#define MADLIB_POSTGRES_BACKEND_ABSTRACTION_HPP
+#ifndef MADLIB_POSTGRES_BACKEND_HPP
+#define MADLIB_POSTGRES_BACKEND_HPP
 
 namespace madlib {
 
@@ -15,6 +15,9 @@ namespace postgres {
 
 namespace {
 // No need to make these function accessible outside of the postgres namespace.
+
+MADLIB_WRAP_PG_FUNC(
+    bool, type_is_array, (Oid typid), (typid))
 
 MADLIB_WRAP_PG_FUNC(
     AclResult, pg_proc_aclcheck, (Oid proc_oid, Oid roleid, AclMode mode),
@@ -149,7 +152,18 @@ madlib_DatumGetByteaP(Datum inDatum) {
 inline
 ArrayType*
 madlib_DatumGetArrayTypeP(Datum inDatum) {
-    return madlib_detoast_verlena_datum_if_necessary<ArrayType>(inDatum);
+    ArrayType* x = madlib_detoast_verlena_datum_if_necessary<ArrayType>(inDatum);
+    if (ARR_HASNULL(x)) {
+        // an empty array has dimensionality 0
+        size_t array_size = ARR_NDIM(x) ? 1 : 0;
+        for (int i = 0; i < ARR_NDIM(x); i ++) {
+            array_size *= ARR_DIMS(x)[i];
+        }
+
+        throw ArrayWithNullException(array_size);
+    }
+
+    return x;
 }
 
 } // namespace

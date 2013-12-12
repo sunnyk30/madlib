@@ -1,3 +1,12 @@
+%% This BibTeX bibliography file was created using BibDesk.
+%% http://bibdesk.sourceforge.net/
+
+
+%% Created for Srikrishna Sridhar at 2012-08-31 14:28:24 -0500 
+
+
+%% Saved with string encoding Unicode (UTF-8) 
+
 
 @string{kdd = {ACM SIGKDD Conference on Knowledge Discovery and Data Mining}}
 
@@ -20,13 +29,55 @@
 @string{soda07 = proc # { 18th } # soda # { (} # sodashort # {'07)}}
 
 
+@article{Lin1989,
+	Abstract = {We derive the asymptotic distribution of the maximum partial likelihood estimator $\hat\beta$ for the vector of regression coefficients β under a possibly misspecified Cox proportional hazards model. As in the parametric setting, this estimator $\hat\beta$ converges to a well-defined constant vector β*. In addition, the random vector $n^{1/2}(\hat\beta - \beta^\ast)$ is asymptotically normal with mean 0 and with a covariance matrix that can be consistently estimated. The newly proposed robust covariance matrix estimator is similar to the so-called "sandwich" variance estimators that have been extensively studied for parametric cases. For many misspecified Cox models, the asymptotic limit β* or part of it can be interpreted meaningfully. In those circumstances, valid statistical inferences about the corresponding covariate effects can be drawn based on the aforementioned asymptotic theory of $\hat\beta$ and the related results for the score statistics. Extensive studies demonstrate that the proposed robust tests and interval estimation procedures are appropriate for practical use. In particular, the robust score tests perform quite well even for small samples. In contrast, the conventional model-based inference procedures often lead to tests with supranominal size and confidence intervals with rather poor coverage probability.},
+	Author = {Lin, D. Y. and Wei, L. J.},
+	Copyright = {Copyright {\copyright} 1989 American Statistical Association},
+	Date-Added = {2012-08-31 18:38:45 +0000},
+	Date-Modified = {2012-08-31 18:38:52 +0000},
+	Issn = {01621459},
+	Journal = {Journal of the American Statistical Association},
+	Jstor_Articletype = {research-article},
+	Jstor_Formatteddate = {Dec., 1989},
+	Language = {English},
+	Number = {408},
+	Pages = {pp. 1074-1078},
+	Publisher = {American Statistical Association},
+	Title = {The Robust Inference for the Cox Proportional Hazards Model},
+	Url = {http://www.jstor.org/stable/2290085},
+	Volume = {84},
+	Year = {1989},
+	Bdsk-Url-1 = {http://www.jstor.org/stable/2290085}}
+
 @manual{postgres:9.1.3,
 	Author = {{The PostgreSQL Global Development Group}},
 	Date-Added = {2012-07-26 21:00:33 +0000},
 	Date-Modified = {2012-07-26 21:02:06 +0000},
 	Title = {{PostgreSQL} 9.1.3 Documentation},
 	Url = {http://www.postgresql.org/docs/9.1},
+	Year = {2011},
+	Bdsk-Url-1 = {http://www.postgresql.org/docs/9.1}}
+
+@manual{r-cox,
+	Author = {John Fox},
+	Title = {{Cox Proportional-Hazards Regression for Survival Data: Appendix to An R and S-PLUS Companion to Applied Regression}},
+	Url = {http://cran.r-project.org/doc/contrib/Fox-Companion/appendix-cox-regression.pdf},
+	Year = {2002}}
+
+@manual{stata-cox,
+	Author = {{Stata Press}},
+	Title = {{stcox - Cox proportional hazards model}},
+	Url = {http://www.stata-press.com/manuals/st_stcox.pdf}}
+	
+@manual{stratified-ethz-slides,
+	Author = {Lisa Borsi and Marc Lickes and Lovro Soldo},
+	Title = {{The stratified Cox Procedure}},
+	Url = {http://stat.ethz.ch/education/semesters/ss2011/seminar/contents/presentation_5.pdf},
 	Year = {2011}}
+
+@manual{cox-zph,
+  author = {Test the Proportional Hazards Assumption of a Cox Regression},
+  title = {http://stat.ethz.ch/R-manual/R-devel/library/survival/html/cox.zph.html}}
 
 @article{V84a,
 	Abstract = {{Several new methods are presented for selecting n records at random without replacement from a file containing N records. Each algorithm selects the records for the sample in a sequential manner---in the same order the records appear in the file. The algorithms are online in that the records for the sample are selected iteratively with no preprocessing. The algorithms require a constant amount of space and are short and easy to implement. The main result of this paper is the design and analysis of Algorithm D, which does the sampling in O(n) time, on the average; roughly n uniform random variates are generated, and approximately n exponentiation operations (of the form ab, for real numbers a and b) are performed during the sampling. This solves an open problem in the literature. CPU timings on a large mainframe computer indicate that Algorithm D is significantly faster than the sampling algorithms in use today.}},
@@ -41,9 +92,8 @@
 	Publisher = {ACM},
 	Title = {Faster methods for random sampling},
 	Volume = {27},
-	Year = {1984},
-	Bdsk-File-1 = {YnBsaXN0MDDUAQIDBAUIJidUJHRvcFgkb2JqZWN0c1gkdmVyc2lvblkkYXJjaGl2ZXLRBgdUcm9vdIABqAkKFRYXGyIjVSRudWxs0wsMDQ4RFFpOUy5vYmplY3RzV05TLmtleXNWJGNsYXNzog8QgASABqISE4ACgAOAB1lhbGlhc0RhdGFccmVsYXRpdmVQYXRo0hgNGRpXTlMuZGF0YU8RA4QAAAAAA4QAAgAACFJlc2VhcmNoAAAAAAAAAAAAAAAAAAAAAAAAAMmQMDVIKwAFAAAoxB9GYXN0ZXIgbWV0aG9kcyBmb3IgcmFuIzI4QzYucGRmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACjGyJWU4wAAAAAAAAAA/////wAADQIAAAAAAAAAAAAAAAAAAAAGVml0dGVyABAACAAAyZCgtQAAABEACAAAyJX3UwAAAAEADAAAKMQAACfbAAAD4QACAEFSZXNlYXJjaDpTaGFyZWQ6TGl0ZXJhdHVyZTpWaXR0ZXI6RmFzdGVyIG1ldGhvZHMgZm9yIHJhbiMyOEM2LnBkZgAADgBOACYARgBhAHMAdABlAHIAIABtAGUAdABoAG8AZABzACAAZgBvAHIAIAByAGEAbgBkAG8AbQAgAHMAYQBtAHAAbABpAG4AZwAuAHAAZABmAA8AEgAIAFIAZQBzAGUAYQByAGMAaAASAEAvU2hhcmVkL0xpdGVyYXR1cmUvVml0dGVyL0Zhc3RlciBtZXRob2RzIGZvciByYW5kb20gc2FtcGxpbmcucGRmABMAIC9Vc2Vycy9zY2hvcGYvRG9jdW1lbnRzL1Jlc2VhcmNoABQBmAAAAAABmAACAAEMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAx9Q1YUgrAAAAEPW+FVJlc2VhcmNoLnNwYXJzZWJ1bmRsZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7alzJkDArAAAAAAAAAAD/////AAAJIAAAAAAAAAAAAAAAAAAAAAlEb2N1bWVudHMAABAACAAAx9SX0QAAABEACAAAyZCgqwAAAAEADAAQ9b4AEPWxAACS8wACADlNYWNpbnRvc2ggSEQ6VXNlcnM6c2Nob3BmOkRvY3VtZW50czpSZXNlYXJjaC5zcGFyc2VidW5kbGUAAA4ALAAVAFIAZQBzAGUAYQByAGMAaAAuAHMAcABhAHIAcwBlAGIAdQBuAGQAbABlAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIALFVzZXJzL3NjaG9wZi9Eb2N1bWVudHMvUmVzZWFyY2guc3BhcnNlYnVuZGxlABMAAS8AABUAAgAN//8AAAAVAAIADf//AACABdIcHR4fWCRjbGFzc2VzWiRjbGFzc25hbWWjHyAhXU5TTXV0YWJsZURhdGFWTlNEYXRhWE5TT2JqZWN0XxBRLi4vLi4vLi4vUmVzZWFyY2gvU2hhcmVkL0xpdGVyYXR1cmUvVml0dGVyL0Zhc3RlciBtZXRob2RzIGZvciByYW5kb20gc2FtcGxpbmcucGRm0hwdJCWiJSFcTlNEaWN0aW9uYXJ5EgABhqBfEA9OU0tleWVkQXJjaGl2ZXIACAARABYAHwAoADIANQA6ADwARQBLAFIAXQBlAGwAbwBxAHMAdgB4AHoAfACGAJMAmACgBCgEKgQvBDgEQwRHBFUEXARlBLkEvgTBBM4E0wAAAAAAAAIBAAAAAAAAACgAAAAAAAAAAAAAAAAAAATl},
-	Bdsk-Url-1 = {http://dx.doi.org/10.1145/358105.893}}
+	Year = {1984}
+}
 
 @article{V85a,
 	Abstract = {{We introduce fast algorithms for selecting a random sample of n records without replacement from a pool of N records, where the value of N is unknown beforehand. The main result of the paper is the design and analysis of Algorithm Z; it does the sampling in one pass using constant space and in O(n(1 + log(N/n))) expected time, which is optimum, up to a constant factor. Several optimizations are studied that collectively improve the speed of the naive version of the algorithm by an order of magnitude. We give an efficient Pascal-like implementation that incorporates these modifications and that is suitable for general use. Theoretical and empirical results indicate that Algorithm Z outperforms current methods by a significant margin.}},
@@ -58,9 +108,8 @@
 	Publisher = {ACM},
 	Title = {Random sampling with a reservoir},
 	Volume = {11},
-	Year = {1985},
-	Bdsk-File-1 = {YnBsaXN0MDDUAQIDBAUIJidUJHRvcFgkb2JqZWN0c1gkdmVyc2lvblkkYXJjaGl2ZXLRBgdUcm9vdIABqAkKFRYXGyIjVSRudWxs0wsMDQ4RFFpOUy5vYmplY3RzV05TLmtleXNWJGNsYXNzog8QgASABqISE4ACgAOAB1lhbGlhc0RhdGFccmVsYXRpdmVQYXRo0hgNGRpXTlMuZGF0YU8RA34AAAAAA34AAgAACFJlc2VhcmNoAAAAAAAAAAAAAAAAAAAAAAAAAMmQMDVIKwAFAAAoxB9SYW5kb20gc2FtcGxpbmcgd2l0aCBhIzI4QzcucGRmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACjHyJbZ/QAAAAAAAAAA/////wAADQIAAAAAAAAAAAAAAAAAAAAGVml0dGVyABAACAAAyZCgtQAAABEACAAAyJc8bQAAAAEADAAAKMQAACfbAAAD4QACAEFSZXNlYXJjaDpTaGFyZWQ6TGl0ZXJhdHVyZTpWaXR0ZXI6UmFuZG9tIHNhbXBsaW5nIHdpdGggYSMyOEM3LnBkZgAADgBKACQAUgBhAG4AZABvAG0AIABzAGEAbQBwAGwAaQBuAGcAIAB3AGkAdABoACAAYQAgAHIAZQBzAGUAcgB2AG8AaQByAC4AcABkAGYADwASAAgAUgBlAHMAZQBhAHIAYwBoABIAPi9TaGFyZWQvTGl0ZXJhdHVyZS9WaXR0ZXIvUmFuZG9tIHNhbXBsaW5nIHdpdGggYSByZXNlcnZvaXIucGRmABMAIC9Vc2Vycy9zY2hvcGYvRG9jdW1lbnRzL1Jlc2VhcmNoABQBmAAAAAABmAACAAEMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAx9Q1YUgrAAAAEPW+FVJlc2VhcmNoLnNwYXJzZWJ1bmRsZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7alzJkDArAAAAAAAAAAD/////AAAJIAAAAAAAAAAAAAAAAAAAAAlEb2N1bWVudHMAABAACAAAx9SX0QAAABEACAAAyZCgqwAAAAEADAAQ9b4AEPWxAACS8wACADlNYWNpbnRvc2ggSEQ6VXNlcnM6c2Nob3BmOkRvY3VtZW50czpSZXNlYXJjaC5zcGFyc2VidW5kbGUAAA4ALAAVAFIAZQBzAGUAYQByAGMAaAAuAHMAcABhAHIAcwBlAGIAdQBuAGQAbABlAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIALFVzZXJzL3NjaG9wZi9Eb2N1bWVudHMvUmVzZWFyY2guc3BhcnNlYnVuZGxlABMAAS8AABUAAgAN//8AAAAVAAIADf//AACABdIcHR4fWCRjbGFzc2VzWiRjbGFzc25hbWWjHyAhXU5TTXV0YWJsZURhdGFWTlNEYXRhWE5TT2JqZWN0XxBPLi4vLi4vLi4vUmVzZWFyY2gvU2hhcmVkL0xpdGVyYXR1cmUvVml0dGVyL1JhbmRvbSBzYW1wbGluZyB3aXRoIGEgcmVzZXJ2b2lyLnBkZtIcHSQloiUhXE5TRGljdGlvbmFyeRIAAYagXxAPTlNLZXllZEFyY2hpdmVyAAgAEQAWAB8AKAAyADUAOgA8AEUASwBSAF0AZQBsAG8AcQBzAHYAeAB6AHwAhgCTAJgAoAQiBCQEKQQyBD0EQQRPBFYEXwSxBLYEuQTGBMsAAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAAE3Q==},
-	Bdsk-Url-1 = {http://dx.doi.org/10.1145/3147.3165}}
+	Year = {1985}
+}
 
 @article{ORO05a,
 	Author = {Ogita, Takeshi and Rump, Siegfried M. and Oishi, Shin'ichi},
@@ -75,7 +124,8 @@
 	Publisher = {Society for Industrial and Applied Mathematics},
 	Title = {Accurate Sum and Dot Product},
 	Volume = {26},
-	Year = {2005}}
+	Year = {2005},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1137/030601818}}
 
 @article{MB83a,
 	Abstract = {{A convenient one-pass algorithm for drawing a simple random sample without replace- ment of size n from a population of N members, when N is initially unknown, is presented. Moreover, even when N is known, this algorithm appears to be more efficient than previously suggested algorithms when the entire population is stored in the fast memory of the computer. Applications to sampling from a computer file and to linear programming are briefly indicated.}},
@@ -91,9 +141,8 @@
 	Publisher = {Blackwell Publishing for the Royal Statistical Society},
 	Title = {A Convenient Algorithm for Drawing a Simple Random Sample},
 	Volume = {32},
-	Year = {1983},
-	Bdsk-File-1 = {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},
-	Bdsk-Url-1 = {http://www.jstor.org/stable/2347297}}
+	Year = {1983}
+}
 
 @article{C82a,
 	Abstract = {{We present a general purpose unequal probability without replacement sampling plan with fixed sample size. In contrast to existing such plans, our scheme keeps the sample size fixed and lets the population units enter the sample one at a time through a carefully designed random mechanism. Consequently, all high-order inclusion probabilities can be easily computed.}},
@@ -107,7 +156,8 @@
 	Pages = {653--656},
 	Title = {A general purpose unequal probability sampling plan},
 	Volume = {69},
-	Year = {1982}}
+	Year = {1982},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1093/biomet/69.3.653}}
 
 @book{CS08a,
 	Author = {Christopher D. Manning and Prabhakar Raghavan and Hinrich Sch{\"u}tze},
@@ -116,7 +166,8 @@
 	Publisher = {Cambridge University Press},
 	Title = {Introduction to Information Retrieval},
 	Url = {http://nlp.stanford.edu/IR-book/},
-	Year = {2008}}
+	Year = {2008},
+	Bdsk-Url-1 = {http://nlp.stanford.edu/IR-book/}}
 
 @inproceedings{V09a,
 	Abstract = {{The k-means algorithm is a well-known method for partitioning n points that lie in the d-dimensional space into k clusters. Its main features are simplicity and speed in practice. Theoretically, however, the best known upper bound on its running time (i.e. O(nkd)) is, in general, exponential in the number of points (when kd=\Omega(n log n)). Recently, Arthur and Vassilvitskii [2] showed a super-polynomial worst-case analysis, improving the best known lower bound from \Omega(n) to 2\Omega(\sqrt{n}) with a construction in d=\Omega(\sqrt{n}) dimensions. In [2] they also conjectured the existence of super-polynomial lower bounds for any d>=2. Our contribution is twofold: we prove this conjecture and we improve the lower bound, by presenting a simple construction in the plane that leads to the exponential lower bound 2^\Omega(n).}},
@@ -127,7 +178,8 @@
 	Doi = {10.1145/1542362.1542419},
 	Keywords = {Clustering},
 	Pages = {324--332},
-	Title = {$k$-means requires exponentially many iterations even in the plane}}
+	Title = {$k$-means requires exponentially many iterations even in the plane},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1145/1542362.1542419}}
 
 @online{AMR09a,
 	Abstract = {{The k-means method is one of the most widely used clustering algorithms, drawing its popularity from its speed in practice. Recently, however, it was shown to have exponential worst-case running time. In order to close the gap between practical performance and theoretical analysis, the k-means method has been studied in the model of smoothed analysis. But even the smoothed analyses so far are unsatisfactory as the bounds are still super-polynomial in the number n of data points.
@@ -154,7 +206,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Pages = {129--137},
 	Title = {Least squares quantization in PCM},
 	Volume = {28},
-	Year = {1982}}
+	Year = {1982},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1109/TIT.1982.1056489}}
 
 @article{MNV10a,
 	Abstract = {{In the k -means problem, we are given a finite set S of points in R^m , and integer k >= 1, and we want to find k points (centers) so as to minimize the sum of the square of the Euclidean distance of each point in S to its nearest center. We show that this well-known problem is NP-hard even for instances in the plane, answering an open question posed by Dasgupta (2007) [7].}},
@@ -167,7 +220,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Month = jun,
 	Note = {In Press.},
 	Title = {The planar $k$-means problem is {NP}-hard},
-	Year = {2010}}
+	Year = {2010},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1016/j.tcs.2010.05.034}}
 
 @article{ADH09a,
 	Abstract = {{A recent proof of NP-hardness of Euclidean sum-of-squares clustering, due to Drineas et al. (Mach. Learn. 56:9--33, 2004), is not valid. An alternate short proof is provided.}},
@@ -179,7 +233,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Pages = {245-248},
 	Title = {{NP}-hardness of {Euclidean} sum-of-squares clustering},
 	Volume = {75},
-	Year = {2009}}
+	Year = {2009},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/s10994-009-5103-0}}
 
 @book{F68a,
 	Author = {William Feller},
@@ -199,8 +254,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Keywords = {Clustering},
 	Pages = {169--178},
 	Title = {Efficient clustering of high-dimensional data sets with application to reference matching},
-	Year = {2000},
-	Bdsk-File-1 = {YnBsaXN0MDDUAQIDBAUIJidUJHRvcFgkb2JqZWN0c1gkdmVyc2lvblkkYXJjaGl2ZXLRBgdUcm9vdIABqAkKFRYXGyIjVSRudWxs0wsMDQ4RFFpOUy5vYmplY3RzV05TLmtleXNWJGNsYXNzog8QgASABqISE4ACgAOAB1lhbGlhc0RhdGFccmVsYXRpdmVQYXRo0hgNGRpXTlMuZGF0YU8RAuYAAAAAAuYAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAMfUNWFIKwAAAPVN/R9FZmZpY2llbnQgY2x1c3RlcmluZyNGNTRERjAucGRmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9U3wy0zLzAAAAAAAAAAAAAMABAAACSAAAAAAAAAAAAAAAAAAAAAWTWNDYWxsdW0sIE5pZ2FtLCBVbmdhcgAQAAgAAMfUl9EAAAARAAgAAMtNPEwAAAABABgA9U39APVNSwDyIY0AEPW+ABD1sQAAkvMAAgBtTWFjaW50b3NoIEhEOlVzZXJzOnNjaG9wZjpEb2N1bWVudHM6ay1tZWFuczpMaXRlcmF0dXJlOk1jQ2FsbHVtLCBOaWdhbSwgVW5nYXI6RWZmaWNpZW50IGNsdXN0ZXJpbmcjRjU0REYwLnBkZgAADgC8AF0ARQBmAGYAaQBjAGkAZQBuAHQAIABjAGwAdQBzAHQAZQByAGkAbgBnACAAbwBmACAAaABpAGcAaAAtAGQAaQBtAGUAbgBzAGkAbwBuAGEAbAAgAGQAYQB0AGEAIABzAGUAdABzACAAdwBpAHQAaAAgAGEAcABwAGwAaQBjAGEAdABpAG8AbgAgAHQAbwAgAHIAZQBmAGUAcgBlAG4AYwBlACAAbQBhAHQAYwBoAGkAbgBnAC4AcABkAGYADwAaAAwATQBhAGMAaQBuAHQAbwBzAGgAIABIAEQAEgCeVXNlcnMvc2Nob3BmL0RvY3VtZW50cy9rLW1lYW5zL0xpdGVyYXR1cmUvTWNDYWxsdW0sIE5pZ2FtLCBVbmdhci9FZmZpY2llbnQgY2x1c3RlcmluZyBvZiBoaWdoLWRpbWVuc2lvbmFsIGRhdGEgc2V0cyB3aXRoIGFwcGxpY2F0aW9uIHRvIHJlZmVyZW5jZSBtYXRjaGluZy5wZGYAEwABLwAAFQACAA3//wAAgAXSHB0eH1gkY2xhc3Nlc1okY2xhc3NuYW1lox8gIV1OU011dGFibGVEYXRhVk5TRGF0YVhOU09iamVjdF8QkC4uLy4uLy4uL2stbWVhbnMvTGl0ZXJhdHVyZS9NY0NhbGx1bSwgTmlnYW0sIFVuZ2FyL0VmZmljaWVudCBjbHVzdGVyaW5nIG9mIGhpZ2gtZGltZW5zaW9uYWwgZGF0YSBzZXRzIHdpdGggYXBwbGljYXRpb24gdG8gcmVmZXJlbmNlIG1hdGNoaW5nLnBkZtIcHSQloiUhXE5TRGljdGlvbmFyeRIAAYagXxAPTlNLZXllZEFyY2hpdmVyAAgAEQAWAB8AKAAyADUAOgA8AEUASwBSAF0AZQBsAG8AcQBzAHYAeAB6AHwAhgCTAJgAoAOKA4wDkQOaA6UDqQO3A74DxwRaBF8EYgRvBHQAAAAAAAACAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAAEhg==}}
+	Year = {2000}
+}
 
 @proceedings{:KDD00,
 	Booktitle = kdd00,
@@ -218,8 +273,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Eprinttype = {acm},
 	Pages = {1027--1035},
 	Title = {k-means++: the advantages of careful seeding},
-	Year = {2007},
-	Bdsk-File-1 = {YnBsaXN0MDDUAQIDBAUIJidUJHRvcFgkb2JqZWN0c1gkdmVyc2lvblkkYXJjaGl2ZXLRBgdUcm9vdIABqAkKFRYXGyIjVSRudWxs0wsMDQ4RFFpOUy5vYmplY3RzV05TLmtleXNWJGNsYXNzog8QgASABqISE4ACgAOAB1lhbGlhc0RhdGFccmVsYXRpdmVQYXRo0hgNGRpXTlMuZGF0YU8RAloAAAAAAloAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAMfUNWFIKwAAAPVNTB9rLW1lYW5zKysgdGhlIGFkdmFudCNGNTREMTIucGRmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9U0Sy0zJnQAAAAAAAAAAAAMABAAACSAAAAAAAAAAAAAAAAAAAAAVQXJ0aHVyLCBWYXNzaWx2aXRza2lpAAAQAAgAAMfUl9EAAAARAAgAAMtNOh0AAAABABgA9U1MAPVNSwDyIY0AEPW+ABD1sQAAkvMAAgBsTWFjaW50b3NoIEhEOlVzZXJzOnNjaG9wZjpEb2N1bWVudHM6ay1tZWFuczpMaXRlcmF0dXJlOkFydGh1ciwgVmFzc2lsdml0c2tpaTprLW1lYW5zKysgdGhlIGFkdmFudCNGNTREMTIucGRmAA4AYAAvAGsALQBtAGUAYQBuAHMAKwArACAAdABoAGUAIABhAGQAdgBhAG4AdABhAGcAZQBzACAAbwBmACAAYwBhAHIAZQBmAHUAbAAgAHMAZQBlAGQAaQBuAGcALgBwAGQAZgAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASAG9Vc2Vycy9zY2hvcGYvRG9jdW1lbnRzL2stbWVhbnMvTGl0ZXJhdHVyZS9BcnRodXIsIFZhc3NpbHZpdHNraWkvay1tZWFucysrIHRoZSBhZHZhbnRhZ2VzIG9mIGNhcmVmdWwgc2VlZGluZy5wZGYAABMAAS8AABUAAgAN//8AAIAF0hwdHh9YJGNsYXNzZXNaJGNsYXNzbmFtZaMfICFdTlNNdXRhYmxlRGF0YVZOU0RhdGFYTlNPYmplY3RfEGEuLi8uLi8uLi9rLW1lYW5zL0xpdGVyYXR1cmUvQXJ0aHVyLCBWYXNzaWx2aXRza2lpL2stbWVhbnMrKyB0aGUgYWR2YW50YWdlcyBvZiBjYXJlZnVsIHNlZWRpbmcucGRm0hwdJCWiJSFcTlNEaWN0aW9uYXJ5EgABhqBfEA9OU0tleWVkQXJjaGl2ZXIACAARABYAHwAoADIANQA6ADwARQBLAFIAXQBlAGwAbwBxAHMAdgB4AHoAfACGAJMAmACgAv4DAAMFAw4DGQMdAysDMgM7A58DpAOnA7QDuQAAAAAAAAIBAAAAAAAAACgAAAAAAAAAAAAAAAAAAAPL}}
+	Year = {2007}
+}
 
 @proceedings{:SODA07,
 	Booktitle = soda07,
@@ -377,7 +432,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Publisher = {Springer Berlin / Heidelberg},
 	Title = {Incremental proximal methods for large scale convex optimization},
 	Volume = {129},
-	Year = {2011}}
+	Year = {2011},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/s10107-011-0472-0}}
 
 @book{nocedal2006numerical,
 	Author = {Nocedal, J. and Wright, S.J.},
@@ -387,7 +443,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Series = {Springer series in operations research},
 	Title = {Numerical optimization},
 	Url = {http://books.google.com/books?id=eNlPAAAAMAAJ},
-	Year = {2006}}
+	Year = {2006},
+	Bdsk-Url-1 = {http://books.google.com/books?id=eNlPAAAAMAAJ}}
 
 @inproceedings{DBLP:conf/nips/BottouB07,
 	Author = {L{\'e}on Bottou and Olivier Bousquet},
@@ -414,7 +471,8 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
 	Series = {Athena scientific optimization and computation series},
 	Title = {Nonlinear programming},
 	Url = {http://books.google.com/books?id=TgMpAQAAMAAJ},
-	Year = {1999}}
+	Year = {1999},
+	Bdsk-Url-1 = {http://books.google.com/books?id=TgMpAQAAMAAJ}}
 
 @article{hager2006survey,
 	Author = {Hager, W. W. and Zhang, H.},
@@ -534,4 +592,181 @@ In this paper, we settle the smoothed running time of the k-means method. We sho
  	Title = {Eigen v3},
 	Url = {http://eigen.tuxfamily.org},
 	Year = {2010}
+}
+
+@article{Blei:2003,
+ author = {Blei, David M. and Ng, Andrew Y. and Jordan, Michael I.},
+ title = {Latent dirichlet allocation},
+ journal = {J. Mach. Learn. Res.},
+ issue_date = {3/1/2003},
+ volume = {3},
+ month = mar,
+ year = {2003},
+ issn = {1532-4435},
+ pages = {993--1022},
+ numpages = {30},
+ url = {http://dl.acm.org/citation.cfm?id=944919.944937},
+ acmid = {944937},
+ publisher = {JMLR.org},
+}
+
+@inproceedings{Wang:2009,
+ author = {Wang, Yi and Bai, Hongjie and Stanton, Matt and Chen, Wen-Yen and Chang, Edward Y.},
+ title = {PLDA: Parallel Latent Dirichlet Allocation for Large-Scale Applications},
+ booktitle = {Proceedings of the 5th International Conference on Algorithmic Aspects in Information and Management},
+ series = {AAIM '09},
+ year = {2009},
+ isbn = {978-3-642-02157-2},
+ location = {San Francisco, CA, USA},
+ pages = {301--314},
+ numpages = {14},
+ url = {http://dx.doi.org/10.1007/978-3-642-02158-9_26},
+ doi = {10.1007/978-3-642-02158-9_26},
+ acmid = {1574062},
+ publisher = {Springer-Verlag},
+ address = {Berlin, Heidelberg},
+}
+
+@article{griffiths04finding,
+  author={Thomas L. Griffiths and Mark Steyvers},
+  title={Finding Scientific Topics},
+  journal={PNAS},
+  year={2004},
+  volume={101},
+  number={suppl. 1},
+  pages={5228-5235},
+}
+
+@article{zou2005,
+	author={Hui Zou and Trevor Hastie},
+	title={Regularization and variable selection via th elastic net},
+	journal={Journal of the Royal Statistical Society: Series B (Statistical Methodology)},
+	year={2005},
+	volume={67},
+	issue={2},
+	pages={301-320}
+}
+
+@article{tibshirani1996,
+	author={Tibshirani, R.},
+	year={1996},
+	title={Regression shrinkage and selection via the lasso},
+	journal={J. R. Statist. Soc. B},
+	volume={58},
+	pages={267-288}
+}
+
+@article{beck2009,
+author = {Beck, Amir and Teboulle, Mark},
+year = {2009},
+title = {A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems},
+journal = {SIAM J. IMAGING SCIENCES},
+volume = {2},
+pages = {183-202}
+}
+
+@article{beck2009,
+author = {Beck, Amir and Teboulle, Mark},
+year = {2009},
+title = {A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems},
+journal = {SIAM J. IMAGING SCIENCES},
+volume = {2},
+pages = {183-202}
+}
+
+@book{cameron2009,
+  title={Microeconometrics using Stata},
+  author={Cameron, A.C. and Trivedi, P.K.},
+  isbn={9781597180481},
+  lccn={2009277898},
+  year={2009},
+  publisher={Stata Press}
+}
+
+@article{diekmann2008,
+author = {Andreas Diekmann and Ben Jann},
+year = {2008},
+title = {Regression Models for Categorical Dependent Variables}
+}
+
+@article{paige1982lsqr,
+  title={LSQR: An algorithm for sparse linear equations and sparse least squares},
+  author={Paige, Christopher C and Saunders, Michael A},
+  journal={ACM Transactions on Mathematical Software (TOMS)},
+  volume={8},
+  number={1},
+  pages={43--71},
+  year={1982},
+  publisher={ACM}
+}
+
+@misc{hestenes1952methods,
+  title={Methods of conjugate gradients for solving linear systems},
+  author={Hestenes, Magnus Rudolph and Stiefel, Eduard},
+  year={1952},
+  publisher={NBS}
+}
+
+@article{golub1964,
+author = {Gene Golub and William Kahan},
+year = {1964},
+title = {Calculating the Singular Values and Pseudo-Inverse of a Matrix},
+journal = {SIAM - Series B Numerical Analysis},
+volume = {2},
+pages = {205-224}
+}
+
+@article{simon2000,
+    author = {Horst Simon and Hongyuan Zha},
+    title = {Low Rank Matrix Approximation Using The Lanczos Bidiagonalization Process With Applications},
+    journal = {SIAM J. Sci. Comput},
+    year = {2000},
+    volume = {21},
+    pages = {2257--2274}
+}
+
+@article{grambsch1994proportional,
+  title={Proportional hazards tests and diagnostics based on weighted residuals},
+  author={Grambsch, Patricia M and Therneau, Terry M},
+  journal={Biometrika},
+  volume={81},
+  number={3},
+  pages={515--526},
+  year={1994},
+  publisher={Biometrika Trust}
+}
+
+@ONLINE{newtest,
+  author = {Bruin, J.},
+  title = {newtest: command to compute new test {@ONLINE}},
+  month = FEB,
+  year = {2011},
+  url = {http://www.ats.ucla.edu/stat/stata/ado/analysis/}
+}
+
+@online{testph,
+  author = {Bruin, J.},
+  title = {Supplemental notes to Applied Survival Analysis
+Applied Survival Analysis},
+  url={http://www.ats.ucla.edu/stat/examples/asa/test_proportionality.htm},
+  year = {2011}
+}
+
+@book{hosmer2011applied,
+    title={Applied survival analysis: regression modeling of time to event data},
+    author={Hosmer Jr, David W and Lemeshow, Stanley and May, Susanne},
+    volume={618},
+    year={2011},
+    publisher={Wiley. com}
+}
+
+@article{lin1989robust,
+    title={The robust inference for the Cox proportional hazards model},
+    author={Lin, DY and Wei, Lee-Jen},
+    journal={Journal of the American Statistical Association},
+    volume={84},
+    number={408},
+    pages={1074--1078},
+    year={1989},
+    publisher={Taylor \& Francis}
 }

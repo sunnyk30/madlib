@@ -9,168 +9,475 @@
 
 @brief Logistic Regression: Driver functions
 """
-
 import plpy
+from utilities.group_control import GroupIterationController
+from utilities.utilities import __unique_string
+from utilities.validate_args import table_exists
+from utilities.validate_args import columns_exist_in_table
+from utilities.validate_args import table_is_empty
+from utilities.utilities import _string_to_array
 
-def __runIterativeAlg(stateType, initialState, source, updateExpr,
-    terminateExpr, maxNumIterations, cyclesPerIteration = 1):
-    """
-    Driver for an iterative algorithm
-    
-    A general driver function for most iterative algorithms: The state between
-    iterations is kept in a variable of type <tt>stateType</tt>, which is
-    initialized with <tt><em>initialState</em></tt>. During each iteration, the
-    SQL statement <tt>updateSQL</tt> is executed in the database. Afterwards,
-    the SQL query <tt>updateSQL</tt> decides whether the algorithm terminates.
-    
-    @param stateType SQL type of the state between iterations
-    @param initialState The initial value of the SQL state variable
-    @param source The source relation
-    @param updateExpr SQL expression that returns the new state of type
-        <tt>stateType</tt>. The expression may use the replacement fields
-        <tt>"{state}"</tt>, <tt>"{iteration}"</tt>, and
-        <tt>"{sourceAlias}"</tt>. Source alias is an alias for the source
-        relation <tt><em>source</em></tt>.
-    @param terminateExpr SQL expression that returns whether the algorithm should
-        terminate. The expression may use the replacement fields
-        <tt>"{oldState}"</tt>, <tt>"{newState}"</tt>, and
-        <tt>"{iteration}"</tt>. It must return a BOOLEAN value.
-    @param maxNumIterations Maximum number of iterations. Algorithm will then
-        terminate even when <tt>terminateExpr</tt> does not evaluate to \c true
-    @param cyclesPerIteration Number of aggregate function calls per iteration.
-    """
-    
-    updateSQL = """
-        INSERT INTO _madlib_iterative_alg
-        SELECT
-            {{iteration}},
-            {updateExpr}
-        FROM
-            _madlib_iterative_alg AS st,
-            {{source}} AS src
-        WHERE
-            st._madlib_iteration = {{iteration}} - 1
-        """.format(updateExpr = updateExpr)
-    terminateSQL = """
-        SELECT
-            {terminateExpr} AS should_terminate
-        FROM    
-        (
-            SELECT _madlib_state
-            FROM _madlib_iterative_alg
-            WHERE _madlib_iteration = {{iteration}} - {{cyclesPerIteration}}
-        ) AS older,
-        (
-            SELECT _madlib_state
-            FROM _madlib_iterative_alg
-            WHERE _madlib_iteration = {{iteration}}
-        ) AS newer
-        """.format(terminateExpr = terminateExpr)
-    checkForNullStateSQL = """
-        SELECT _madlib_state IS NULL AS should_terminate
-        FROM _madlib_iterative_alg
-        WHERE _madlib_iteration = {iteration}
-        """
+# ========================================================================
 
-    oldMsgLevel = plpy.execute("SELECT setting FROM pg_settings WHERE name='client_min_messages'"
-        )[0]['setting']
-    plpy.execute("""
-        SET client_min_messages = error;
-        DROP TABLE IF EXISTS _madlib_iterative_alg;
-        CREATE TEMPORARY TABLE _madlib_iterative_alg (
-            _madlib_iteration INTEGER PRIMARY KEY,
-            _madlib_state {stateType}
-        );
-        SET client_min_messages = {oldMsgLevel};
-        """.format(stateType = stateType, oldMsgLevel = oldMsgLevel))
-    
-    iteration = 0
-    plpy.execute("""
-        INSERT INTO _madlib_iterative_alg VALUES ({iteration}, {initialState})
-        """.format(iteration = iteration, initialState = initialState))
-    while True:
-        iteration = iteration + 1
-        plpy.execute(updateSQL.format(
-            source = source,
-            state = "(st._madlib_state)",
-            iteration = iteration,
-            sourceAlias = "src"))
-        if plpy.execute(checkForNullStateSQL.format(
-                iteration = iteration))[0]['should_terminate'] or (
-            iteration > cyclesPerIteration and (
-            iteration >= cyclesPerIteration * maxNumIterations or
-            plpy.execute(terminateSQL.format(
-                iteration = iteration,
-                cyclesPerIteration = cyclesPerIteration,
-                oldState = "(older._madlib_state)",
-                newState = "(newer._madlib_state)"))[0]['should_terminate'])):
-            break
-    
-    # Note: We do not drop the temporary table
-    return iteration
-
-
-def compute_logregr(schema_madlib, source, depColumn, indepColumn, optimizer,
-    maxNumIterations, precision, **kwargs):
+def __compute_logregr(schema_madlib, rel_args, rel_state, rel_source,
+                      dep_col, ind_col, optimizer, grouping_col,
+                      grouping_str, **kwargs):
     """
     Compute logistic regression coefficients
-    
+
     This method serves as an interface to different optimization algorithms.
     By default, iteratively reweighted least squares is used, but for data with
     a lot of columns the conjugate-gradient method might perform better.
-    
+
     @param schema_madlib Name of the MADlib schema, properly escaped/quoted
-    @param source Name of relation containing the training data
-    @param depColumn Name of dependent column in training data (of type BOOLEAN)
-    @param indepColumn Name of independent column in training data (of type
-           DOUBLE PRECISION[])
+    @param rel_args Stores parameters that are needed by optimizers:
+                        max_iter and tolerance
+    @param rel_state Store the iteration states
+    @param rel_source Name of relation containing the training data
+    @param dep_col Name of dependent column in training data (of type BOOLEAN)
+    @param ind_col Name of independent column in training data (of type
+                   DOUBLE PRECISION[])
     @param optimizer Name of the optimizer. 'newton' or 'irls': Iteratively
-        reweighted least squares, 'cg': conjugate gradient or 'igd': 
-        incremental gradient descent
-    @param maxNumIterations Maximum number of iterations
-    @param precision Terminate if two consecutive iterations have a difference 
-           in the log-likelihood of less than <tt>precision</tt>. In other
-           words, we terminate if the objective function value has converged.
-           This convergence criterion can be disabled by specifying a negative
-           value.
+                     reweighted least squares, 'cg': conjugate gradient or
+                     'igd': incremental gradient descent
+    @param grouping_col String of comma delimited group-by columns
+    @param grouping_str string of comma delimited group-by columns (casted)
     @param kwargs We allow the caller to specify additional arguments (all of
            which will be ignored though). The purpose of this is to allow the
-           caller to unpack a dictionary whose element set is a superset of 
+           caller to unpack a dictionary whose element set is a superset of
            the required arguments by this function.
-    
-    @return array with coefficients in case of convergence, otherwise None
+
+    @return Number of iterations that has been run
     """
-    
-    if maxNumIterations < 1:
-        plpy.error("Number of iterations must be positive")
-    
-    if optimizer == 'newton':
-        optimizer = 'irls'
-    elif optimizer not in ['irls', 'cg', 'igd']:
-        plpy.error("Unknown optimizer requested. Must be 'newton'/'irls', "
-            "'cg', or 'igd'")
-    
-    return __runIterativeAlg(
-        stateType = "FLOAT8[]",
-        initialState = "NULL",
-        source = source,
-        updateExpr = """
-            {schema_madlib}.logregr_{optimizer}_step(
-                ({depColumn})::BOOLEAN,
-                ({indepColumn})::FLOAT8[],
-                {{state}}
-            )
-            """.format(
-                schema_madlib = schema_madlib,
-                depColumn = depColumn,
-                indepColumn = indepColumn,
-                optimizer = optimizer),
-        terminateExpr = """
-            {schema_madlib}.internal_logregr_{optimizer}_step_distance(
-                {{newState}}, {{oldState}}
-            ) < {precision}
-            """.format(
-                schema_madlib = schema_madlib,
+
+    iterationCtrl = GroupIterationController(
+        rel_args=rel_args,
+        rel_state=rel_state,
+        stateType="double precision[]",
+        # truncAfterIteration=False,
+        schema_madlib=schema_madlib,  # Identifiers start here
+        rel_source=rel_source,
+        ind_col=ind_col,
+        dep_col=dep_col,
+        optimizer=optimizer,
+        grouping_col = grouping_col,
+        grouping_str = grouping_str)
+
+    with iterationCtrl as it:
+        it.iteration = 0
+        while True:
+            it.update(
+                """
+                {schema_madlib}.__logregr_{optimizer}_step(
+                    ({dep_col})::boolean,
+                    ({ind_col})::double precision[],
+                    {rel_state}._state)
+                """)
+            if it.test(
+                    """
+                    {iteration} >= _args.max_iter
+                    or
+                    _state_current[array_upper(_state_current, 1)] = 3
+                    or
+                    {schema_madlib}.__logregr_{optimizer}_step_distance(
+                        _state_previous, _state_current) < _args.tolerance
+                    """):
+                break
+    return iterationCtrl.iteration
+
+# ========================================================================
+
+
+def logregr_train(
+    schema_madlib, source_table, out_table, dependent_varname,
+    independent_varname, grouping_cols=None, max_iter=None,
+    optimizer=None, tolerance=None, verbose=None, **kwargs):
+    """
+    Train logistic model
+
+    @param schema_madlib Name of the MADlib schema, properly escaped/quoted
+    @param source_table Name of relation containing the training data
+    @param out_table Name of relation where model will be outputted
+    @param dependent_varname Name of dependent column in training data (of type BOOLEAN)
+    @param independent_varname Name of independent column in training data (of type
+                   DOUBLE PRECISION[])
+    @param grouping_cols String of comma delimited group-by columns
+    @param max_iter The maximum number of iterations that are allowed.
+    @param optimizer Name of the optimizer. 'newton' or 'irls': Iteratively
+                     reweighted least squares, 'cg': conjugate gradient or 'igd':
+                     incremental gradient descent
+    @param tolerance The precision that the results should have
+    @param kwargs We allow the caller to specify additional arguments (all of
+           which will be ignored though). The purpose of this is to allow the
+           caller to unpack a dictionary whose element set is a superset of
+           the required arguments by this function.
+
+    @return A composite value which is __logregr_result defined in logistic.sql_in
+    """
+    optimizer = __logregr_validate_args(
+        schema_madlib, source_table, out_table, dependent_varname,
+        independent_varname, grouping_cols, max_iter, optimizer, tolerance)
+
+    return __logregr_train_compute(
+        schema_madlib, source_table, out_table, dependent_varname,
+        independent_varname, grouping_cols, max_iter, optimizer, tolerance,
+        verbose, **kwargs)
+
+# ========================================================================
+
+
+def __logregr_validate_args(schema_madlib, tbl_source, tbl_output, dep_col,
+                            ind_col, grouping_col, max_iter, optimizer,
+                            tolerance):
+    """
+    Validate the arguments
+    """
+    if tbl_source is None or tbl_source.strip().lower() in ('null', ''):
+        plpy.error("Logregr error: Invalid data table name!")
+    if not table_exists(tbl_source):
+        plpy.error("Logregr error: Data table does not exist!")
+    if table_is_empty(tbl_source):
+        plpy.error("Logregr error: Data table is empty!")
+
+    if tbl_output is None or tbl_output.strip().lower() in ('null', ''):
+        plpy.error("Logregr error: Invalid output table name!")
+
+    if (table_exists(tbl_output)):
+        plpy.error("Output table name already exists. Drop the table before calling the function.")
+
+    if not dep_col or dep_col.strip().lower() in ('null', ''):
+        plpy.error("Logregr error: Invalid dependent column name!")
+
+    # if not columns_exist_in_table(tbl_source, [dep_col]):
+    #     plpy.error("Logregr error: Dependent column does not exist!")
+
+    if not ind_col or ind_col.lower() in ('null', ''):
+        plpy.error("Logregr error: Invalid independent column name!")
+
+    if grouping_col is not None and grouping_col.strip().lower() in ('null', ''):
+        plpy.error("Logregr error: Invalid grouping columns name!")
+
+    if grouping_col is not None:
+        if not columns_exist_in_table(tbl_source,
+            _string_to_array(grouping_col), schema_madlib):
+            plpy.error("Logregr error: Grouping column does not exist!")
+
+    if max_iter <= 0:
+        plpy.error("Logregr error: Maximum number of iterations must be positive!")
+
+    if tolerance < 0:
+        plpy.error("Logregr error: The tolerance cannot be negative!")
+
+    if optimizer == "newton":
+        optimizer = "irls"
+    elif optimizer not in ("irls", "cg", "igd"):
+        plpy.error(""" Logregr error: Unknown optimizer requested.
+                   Must be 'newton'/'irls', 'cg', or 'igd'.
+                   """)
+
+    return optimizer
+
+# ========================================================================
+
+
+def __logregr_train_compute(schema_madlib, tbl_source, tbl_output, dep_col,
+                              ind_col, grouping_col, max_iter, optimizer,
+                              tolerance, verbose, **kwargs):
+    """
+    Create an output table (drop if exists) that contains the logistic
+    regression model
+    """
+    old_msg_level = plpy.execute("select setting from pg_settings where \
+                                  name='client_min_messages'")[0]['setting']
+    if verbose:
+        plpy.execute("set client_min_messages to warning")
+    else:
+        plpy.execute("set client_min_messages to error")
+
+    args = dict(schema_madlib = schema_madlib,
+                tbl_source = tbl_source,
+                tbl_output = tbl_output,
+                dep_col = dep_col,
+                ind_col = ind_col,
+                max_iter = max_iter,
                 optimizer = optimizer,
-                precision = precision),
-        maxNumIterations = maxNumIterations)
+                tolerance = tolerance,
+                tbl_logregr_args = __unique_string(),
+                tbl_logregr_state = __unique_string(),
+                irls = "__logregr_irls_result",
+                newton = "__logregr_irls_result",
+                cg = "__logregr_cg_result",
+                igd = "__logregr_igd_result")
+
+    plpy.execute("select {schema_madlib}.create_schema_pg_temp()".format(**args))
+    plpy.execute(
+        """
+        drop table if exists pg_temp.{tbl_logregr_args};
+        create table pg_temp.{tbl_logregr_args} as
+            select
+                {max_iter} as max_iter,
+                {tolerance} as tolerance
+        """.format(**args))
+
+    # return an array of dict
+    # each dict has two elements: iteration number, and grouping value array
+    if grouping_col:
+        grouping_list = _string_to_array(grouping_col)
+        for i in range(len(grouping_list)):
+            grouping_list[i] += "::text"
+        grouping_str = ','.join(grouping_list)
+    else:
+        grouping_str = "Null"
+
+    iteration_run = __compute_logregr(schema_madlib, args["tbl_logregr_args"],
+                                      args["tbl_logregr_state"], tbl_source,
+                                      dep_col, ind_col, optimizer,
+                                      grouping_col = grouping_col,
+                                      grouping_str = grouping_str)
+
+    grouping_str1 = "" if grouping_col is None else grouping_col + ","
+    grouping_str2 = "1 = 1" if grouping_col is None else grouping_col
+    using_str = "" if grouping_str1 == "" else "using (" + grouping_col + ")"
+    join_str = "," if grouping_str1 == "" else "join "
+
+    plpy.execute(
+        """
+        drop table if exists {tbl_output};
+        create table {tbl_output} as
+            select
+                {grouping_str1}
+                (case when (result).status = 1 then (result).coef
+                    else NULL::double precision[] end) as coef,
+                (case when (result).status = 1 then (result).log_likelihood
+                    else NULL::double precision end) as log_likelihood,
+                (case when (result).status = 1 then (result).std_err
+                    else NULL::double precision[] end) as std_err,
+                (case when (result).status = 1 then (result).z_stats
+                    else NULL::double precision[] end) as z_stats,
+                (case when (result).status = 1 then (result).p_values
+                    else NULL::double precision[] end) as p_values,
+                (case when (result).status = 1 then (result).odds_ratios
+                    else NULL::double precision[] end) as odds_ratios,
+                (case when (result).status = 1 then (result).condition_no
+                    else NULL::double precision end) as condition_no,
+                (case when (result).status = 1 then (result).num_processed
+                    when result is NULL then 0
+                    else NULL::bigint end) as num_rows_processed,
+                (case when (result).status = 1 then num_rows - (result).num_processed
+                    when result is null then num_rows
+                    else NULL::bigint end) as num_missing_rows_skipped,
+                _iteration as num_iterations
+            from
+            (
+                select
+                    _iteration, {grouping_str1} result, num_rows
+                from
+                (
+                    (select
+                        {grouping_str1}
+                        {schema_madlib}.{fnName}(_state) as result,
+                        _iteration
+                    from
+                        {tbl_logregr_state}
+                    ) t
+                    join
+                    (
+                    select
+                        {grouping_str1}
+                        max(_iteration) as _iteration
+                    from {tbl_logregr_state}
+                    group by {grouping_str2}
+                    ) s
+                    using ({grouping_str1} _iteration)
+                ) q1
+                {join_str}
+                (
+                    select
+                        {grouping_str1}
+                        count(*) num_rows
+                    from {tbl_source}
+                    group by {grouping_str2}
+                ) q2
+                {using_str}
+            ) q3
+        """.format(grouping_str1 = grouping_str1,
+                   grouping_str2 = grouping_str2,
+                   fnName = args[args["optimizer"]],
+                   iteration_run = iteration_run,
+                   using_str=using_str,
+                   join_str=join_str,
+                   **args))
+
+
+
+    failed_groups = plpy.execute(
+                    """
+                    select count(*) as count
+                    from {tbl_output}
+                    where coef is Null
+                    """.format(**args))[0]["count"]
+    all_groups    = plpy.execute(
+                    """
+                    select count(*) as count
+                    from {tbl_output}
+                    """.format(**args))[0]["count"]
+
+    num_rows = plpy.execute(
+        """
+        select
+            sum(num_rows_processed) as num_rows_processed,
+            sum(num_missing_rows_skipped) as num_missing_rows_skipped
+        from {tbl_output}
+        """.format(tbl_output=tbl_output))[0]
+
+    if num_rows['num_rows_processed'] is None:
+        num_rows['num_rows_processed'] = "NULL"
+        num_rows['num_missing_rows_skipped'] = "NULL"
+
+    args.update(num_rows)
+
+    plpy.execute(
+        """
+        create table {tbl_output}_summary as
+            select
+                '{tbl_source}'::varchar as source_table,
+                '{tbl_output}'::varchar as out_table,
+                '{dep_col}'::varchar as dependent_varname,
+                '{ind_col}'::varchar as independent_varname,
+                'optimizer={optimizer}, max_iter={max_iter}, tolerance={tolerance}'::varchar as optimizer_params,
+                {all_groups}::integer as num_all_groups,
+                {failed_groups}::integer as num_failed_groups,
+                {num_rows_processed}::integer as num_rows_processed,
+                {num_missing_rows_skipped}::integer as num_missing_rows_skipped
+        """.format(all_groups=all_groups, failed_groups=failed_groups,
+                   **args))
+
+    # if grouping_col:
+    #     plpy.info(str(all_groups - failed_groups) +
+    #                 " groups succesfully passed, and " +
+    #                 str(failed_groups) + " groups failed")
+
+    plpy.execute("""
+                 drop table if exists pg_temp.{tbl_logregr_args};
+                 drop table if exists pg_temp.{tbl_logregr_state}
+                 """.format(**args))
+
+    plpy.execute("set client_min_messages to " + old_msg_level)
+    return None
+
+# --------------------------------------------------------------------
+
+def logregr_help_msg (schema_madlib, message, **kwargs):
+    """ Help message for logistic regression
+
+    @param message A string, the help message indicator
+
+    Returns:
+      A string, contains the help message
+    """
+    if message is None:
+        help_string = """
+        ----------------------------------------------------------------
+                                SUMMARY
+        ----------------------------------------------------------------
+        Binomial logistic regression models the relationship between a
+        dichotomous dependent variable and one or more predictor variables.
+
+        The dependent variable may be a Boolean value or a categorial variable
+        that can be represented with a Boolean expression.
+
+        For more details on function usage:
+            SELECT {schema_madlib}.logregr_train('usage')
+
+        For a small example on using the function:
+            SELECT {schema_madlib}.logregr_train('example')
+        """
+    elif message in ['usage', 'help', '?']:
+        help_string = """
+        ------------------------------------------------------------------
+                                USAGE
+        ------------------------------------------------------------------
+        SELECT {schema_madlib}.logregr_train(
+            source_table,         -- name of input table
+            out_table,            -- name of output table
+            dependent_varname,    -- name of dependent variable
+            independent_varname,  -- names of independent variables
+            grouping_cols,        -- optional, default NULL, names of columns to group-by
+            max_iter,             -- optional, default 20, maximum iteration number
+            optimizer,            -- optional, default 'irls', name of optimization method
+            tolerance,            -- optional, default 0.0001, the stopping threshold
+            verbose               -- optional, default FALSE, whether to print useful info
+        );
+
+        ------------------------------------------------------------------
+                                OUTPUT
+        ------------------------------------------------------------------
+        The output table ('out_table' above) has the following columns:
+            <...>,                                          -- Grouping column values used during training
+            'coef',                     double precision[], -- vector of fitting coefficients
+            'log_likelihood',           double precision,   -- log likelihood
+            'std_err',                  double precision[], -- vector of standard errors of the fitting coefficients
+            'z_stats',                  double precision[], -- vector of the z-statistics of the coefficients
+            'p_values',                 double precision[], -- vector of the p values
+            'odds_ratios',              double precision[], -- vector of odds ratios, exp(coefficients)
+            'condition_no',             double precision,   -- the condition number
+            'num_rows_processed',       integer,            -- how many rows are actually used in the computation
+            'num_missing_rows_skipped', integer,            -- number of rows that contain NULL and were skipped per group
+            'num_iterations'            double precision    -- how many iterations are used in the computation per group
+
+        A summary table named <out_table>_summary is also created at the same time, which has:
+            'source_table'              varchar,    -- the data source table name
+            'out_table'                 varchar,    -- the output table name
+            'dependent_varname'         varchar,    -- the dependent variable
+            'independent_varname'       varchar,    -- the independent variable
+            'optimizer_params'          varchar,    -- 'optimizer=..., max_iter=..., tolerance=...'
+            'num_all_groups'            integer,    -- how many groups
+            'num_failed_groups'         integer,    -- how many groups' fitting processes failed
+            'num_rows_processed'        integer,    -- total number of rows used in the computation
+            'num_missing_rows_skipped'  integer     -- total number of rows skipped
+        """
+    elif message in ['example', 'examples']:
+        help_string = """
+        CREATE TABLE patients( id INTEGER NOT NULL,
+                               second_attack INTEGER,
+                               treatment INTEGER,
+                               trait_anxiety INTEGER);
+        COPY patients FROM STDIN WITH DELIMITER '|';
+          1 |             1 |         1 |            70
+          3 |             1 |         1 |            50
+          5 |             1 |         0 |            40
+          7 |             1 |         0 |            75
+          9 |             1 |         0 |            70
+         11 |             0 |         1 |            65
+         13 |             0 |         1 |            45
+         15 |             0 |         1 |            40
+         17 |             0 |         0 |            55
+         19 |             0 |         0 |            50
+          2 |             1 |         1 |            80
+          4 |             1 |         0 |            60
+          6 |             1 |         0 |            65
+          8 |             1 |         0 |            80
+         10 |             1 |         0 |            60
+         12 |             0 |         1 |            50
+         14 |             0 |         1 |            35
+         16 |             0 |         1 |            50
+         18 |             0 |         0 |            45
+         20 |             0 |         0 |            60
+        \.
+
+        SELECT madlib.logregr_train( 'patients',
+                                     'patients_logregr',
+                                     'second_attack',
+                                     'ARRAY[1, treatment, trait_anxiety]',
+                                     NULL,
+                                     20,
+                                     'irls'
+                                   );
+
+        SELECT * from patients_logregr;
+        """
+    else:
+        help_string = "No such option. Use {schema_madlib}.logregr_train()"
+
+    return help_string.format(schema_madlib=schema_madlib)
+

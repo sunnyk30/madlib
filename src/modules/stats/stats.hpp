@@ -13,4 +13,5 @@
 #include "t_test.hpp"
 #include "wilcoxon_signed_rank_test.hpp"
 #include "cox_prop_hazards.hpp"
-
+#include "robust_variance_coxph.hpp"
+#include "clustered_variance_coxph.hpp"

@@ -89,3 +89,35 @@ DECLARE_UDF(regress, internal_logregr_igd_step_distance)
  *     Convert transition state to result tuple
  */
 DECLARE_UDF(regress, internal_logregr_igd_result)
+
+/**
+ * @brief Robust Variance Logistic regression step: Transition function
+ */
+DECLARE_UDF(regress, robust_logregr_step_transition)
+
+/**
+ * @brief Robust Variance Logistic regression step: State merge function
+ */
+DECLARE_UDF(regress, robust_logregr_step_merge_states)
+
+/**
+ * @brief Robust Variance Logistic regression step: Final function
+ */
+DECLARE_UDF(regress, robust_logregr_step_final)
+
+
+/**
+ * @brief Marginal Effects Logistic regression step: Transition function
+ */
+DECLARE_UDF(regress, marginal_logregr_step_transition)
+
+/**
+ * @brief Marginal effects Logistic regression step: State merge function
+ */
+DECLARE_UDF(regress, marginal_logregr_step_merge_states)
+
+/**
+ * @brief Marginal Effects Logistic regression step: Final function
+ */
+DECLARE_UDF(regress, marginal_logregr_step_final)
+
